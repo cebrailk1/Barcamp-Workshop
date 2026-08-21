@@ -8,146 +8,142 @@ style: |
   h1 { color: #2b6cb0; }
   h2 { color: #2c5282; }
   table { font-size: 22px; }
-  blockquote { border-left: 6px solid #c53030; padding-left: 14px; color: #444; }
 ---
 
 <!-- _paginate: false -->
 
 # The Proxy Pattern
-## Your object's bodyguard 🛡️
 
-**Structural Design Patterns · Barcamp Session**
+**Structural Design Patterns – Barcamp Session**
 
-Workshop by *<your names here>* · 60 minutes
-
----
-
-# Agenda
-
-| Time | What |
-|---|---|
-| 0–5 | Welcome + warm-up poll |
-| 5–15 | The problem + what is a Proxy? (UML) |
-| 15–30 | Live coding: caching & protection proxies |
-| 30–45 | **Hands-on:** build your own proxy (pairs) |
-| 45–55 | Model answer + Proxy vs. friends |
-| 55–60 | Takeaways + feedback |
+Cebrail K. & Tiago D. · 60 minutes
 
 ---
 
-# Warm-up 🙋
+## Agenda
+
+- 0–5: Welcome, short warm-up
+- 5–15: The problem, what is a Proxy, UML
+- 15–30: Live coding: caching and protection proxies
+- 30–45: Hands-on in pairs: build your own proxy
+- 45–55: Model answer, Proxy vs. similar patterns
+- 55–60: Wrap-up and feedback
+
+---
+
+## Warm-up
 
 Raise your hand if you have used ...
 
-- a **VPN**
-- a **credit card**
-- a **bouncer** in front of a club
+- a VPN
+- a credit card
+- a bouncer in front of a club
 
-> All three stand *in front of* something else and control access to it.
-> That is exactly what a **Proxy** does for objects.
+All three stand in front of something else and control access to it.
+A Proxy does the same for objects.
 
 ---
 
-# The Problem
+## The problem
 
-A gallery app talks **directly** to a remote image service:
+A gallery app talks directly to a remote image service:
 
 ```ts
 service.fetch("cat.png");   // 400 ms network call
 service.fetch("dog.png");
-service.fetch("cat.png");   // same file - downloaded AGAIN!
+service.fetch("cat.png");   // same file, downloaded again
 ```
 
-- 💸 wasted bandwidth & money
-- 🐌 slow first page load (everything eager)
-- 🔓 anyone can call anything — no access control
-- 🔗 client is welded to one concrete class
+What we saw in the demo:
 
-Live demo: `npm run demo1`
+- the same file gets downloaded twice
+- everything loads eagerly, first paint is slow
+- anyone can call anything, there is no access control
+- the client is hard-wired to one concrete class
 
----
-
-# What is a Proxy?
-
-> A Proxy is a **stand-in object** with the **same interface** as the real
-> service. Clients talk to the proxy — the proxy decides whether, when and
-> how the real service is used.
-
-- GoF classification: **structural pattern** (like Adapter, Decorator, Facade)
-- Intent: *"Provide a surrogate or placeholder for another object to
-  control access to it."*
-- The client code **never changes**
+Demo: `npm run demo1`
 
 ---
 
-# Real-world analogies
+## What is a Proxy?
 
-| Analogy | What it controls |
-|---|---|
-| 🚪 Bouncer | who gets in (**protection**) |
-| 💳 Credit card | money you don't carry (**virtual**) |
-| 🌍 VPN | where your request really goes (**remote**) |
-| 📝 Notary | records every signature (**logging**) |
+> A proxy is a stand-in object with the same interface as the real service.
+> Clients talk to the proxy, and the proxy decides whether, when and how
+> the real service gets used.
 
-Same idea: **stand in front, add control, keep the interface.**
+- belongs to the structural patterns (GoF), like Adapter, Decorator, Facade
+- original intent: "Provide a surrogate or placeholder for another object
+  to control access to it."
+- the client code does not change at all
 
 ---
 
-# UML
+## Analogies
+
+- Bouncer: controls who gets in (protection)
+- Credit card: money you do not carry with you (virtual)
+- VPN: your request takes a different route (remote)
+- Notary: records every signature (logging)
+
+Always the same idea: stand in front, add control, keep the interface.
+
+---
+
+## UML
 
 ![w:880](../assets/uml-proxy.svg)
 
 ---
 
-# The trick: one shared interface
+## One shared interface
 
 ```ts
-interface ImageService {              // <- both implement THIS
+interface ImageService {              // both implement this
   fetch(filename: string): string;
 }
 
 class CachingImageProxy implements ImageService {
   private cache = new Map<string, string>();
-  private real: ImageService | null = null;   // lazy!
+  private real: ImageService | null = null;   // lazy
 
   fetch(name: string): string {
     const hit = this.cache.get(name);
-    if (hit) return hit;                      // 1. cache first
-    this.real ??= new RemoteImageService();   // 2. lazy create
-    const data = this.real.fetch(name);       // 3. delegate
-    this.cache.set(name, data);               // 4. remember
+    if (hit) return hit;                      // cache first
+    this.real ??= new RemoteImageService();   // create on first use
+    const data = this.real.fetch(name);       // delegate
+    this.cache.set(name, data);               // remember
     return data;
   }
 }
 ```
 
-Live demo: `npm run demo2`
+Demo: `npm run demo2`
 
 ---
 
-# Protection Proxy — access control
+## Protection proxy
 
 ```ts
 delete(docId: string, user: User): void {
   if (user.role !== "admin") {
     console.log("403 - only admins may delete");
-    return;                        // request never reaches the store
+    return;                        // never reaches the store
   }
-  this.real.delete(docId, user);   // authorized -> delegate
+  this.real.delete(docId, user);   // authorized, delegate
 }
 ```
 
-The real store stays **dumb and safe**:
-it can trust that every incoming call was already checked.
+The real store stays simple. It can assume that every call it receives
+was already checked by someone else.
 
-Live demo: `npm run demo3`
+Demo: `npm run demo3`
 
 ---
 
-# Logging / Timing Proxy
+## Logging and timing
 
-Cross-cutting concerns (logging, metrics, tracing) don't belong
-inside business classes:
+Logging, metrics, tracing: useful for us, but they do not belong inside
+the business class.
 
 ```ts
 getTemperature(city: string): number {
@@ -158,94 +154,95 @@ getTemperature(city: string): number {
 }
 ```
 
-Live demo: `npm run demo4`
+Demo: `npm run demo4`
 
 ---
 
-# 🤯 JavaScript ships a built-in Proxy
+## JavaScript has this built in
 
 ```ts
 function withLogging<T extends object>(target: T): T {
   return new Proxy(target, {
-    get(obj, prop) { /* wrap every method automatically */ }
+    get(obj, prop) { /* wraps every method automatically */ }
   });
 }
 ```
 
-One handler → **all methods covered**, works on any object.
+One handler covers all methods of any object.
 
-Powers **Vue 3 reactivity**, MobX, mock libraries, ...
+Vue 3 reactivity and MobX are built on exactly this.
 
-Live demo: `npm run demo5`
+Demo: `npm run demo5`
 
 ---
 
-# Hands-on time! 🛠️ (15 min, pairs)
+## Hands-on (15 min, in pairs)
 
-**Mission:** make the slow quote app fast.
+Mission: make the slow quote app fast.
 
 1. Open `code/exercise/starter/exercise.ts`
-2. Implement `CachingQuoteProxy` — cache every topic after the first fetch
-3. Client code must stay untouched!
+2. Implement `CachingQuoteProxy`: every topic gets fetched once,
+   repeated requests come from your cache
+3. The client code at the bottom stays untouched
 
 ```bash
 npm run exercise            # your attempt
 npm run exercise:solution   # model answer
 ```
 
-Goal: `SUCCESS - cache works!` 🎉
-
-Hints are at the bottom of `code/exercise/README.md`.
+You are done when it prints `SUCCESS - cache works!`
+Hints: `code/exercise/README.md`
 
 ---
 
-# Proxy vs. its look-alikes
+## Proxy vs. similar patterns
 
 | Pattern | Question it answers |
 |---|---|
-| **Proxy** | Same interface — controls **access** |
-| **Decorator** | Same interface — **adds behaviour/responsibilities** |
-| **Adapter** | **Different** interface — makes things compatible |
-| **Facade** | Simplifies a **whole subsystem** behind one front door |
+| Proxy | same interface, controls access |
+| Decorator | same interface, adds behaviour |
+| Adapter | different interface, makes things compatible |
+| Facade | one simple front door for a whole subsystem |
 
-> Exam favourite: Proxy vs. Decorator.
-> Both wrap with the same interface — but the proxy *manages access*
-> (lazy, cached, guarded), the decorator *enriches*.
-
----
-
-# Pros & Cons
-
-**✅ Pros**
-- control access without touching the real class
-- lazy loading & caching → performance wins
-- open/closed: new behaviour, old clients unchanged
-
-**❌ Cons**
-- more classes / indirection
-- response time may grow (extra layer)
-- overuse → "wrapper hell", hard to debug
+Common exam question: Proxy vs. Decorator. Both wrap with the same
+interface, but the proxy manages access (lazy, cached, guarded)
+while the decorator enriches behaviour.
 
 ---
 
-# Proxies in the wild
+## Pros and cons
 
-- **Lazy-loaded images** (`loading="lazy"`) — virtual proxy in the browser
-- **Express middleware** — logging/auth proxies around route handlers
-- **API SDKs & caches** — retry, rate-limit, memoize remote calls
-- **Vue 3 / MobX reactivity** — built on the native JS `Proxy`
-- **ORM lazy relations** — `user.posts` loads from DB only when touched
+Pros:
+
+- access control without touching the real class
+- lazy loading and caching can save a lot of time
+- old clients keep working when you add a proxy
+
+Cons:
+
+- more classes, more indirection
+- an extra layer can hide where time is spent
+- easy to overuse
 
 ---
 
-# Takeaways
+## Where you meet proxies in real life
 
-1. Proxy = **same interface**, stands **in front of** the real object
-2. Controls **when/how/who**: lazy, cached, guarded, logged
-3. Client code stays unchanged — that's the whole point
-4. Know the difference: **Proxy ≠ Decorator ≠ Adapter**
+- lazy-loaded images (`loading="lazy"` in the browser)
+- Express middleware around route handlers
+- API clients with retry, rate limiting or caching
+- Vue 3 / MobX reactivity (native JS `Proxy`)
+- ORMs: relations load from the database only when used
 
-### Feedback: Fist-to-Five ✊✋
-How useful was this session for you?
+---
 
-**Thanks! Questions? 🙌**
+## Summary
+
+1. A proxy has the same interface as the real object and stands in front of it
+2. It controls when, how and who: lazy, cached, guarded, logged
+3. The client code stays unchanged
+4. Do not mix it up with Decorator or Adapter
+
+Feedback: Fist-to-Five. How useful was this session for you?
+
+Thanks, and questions if you have any.

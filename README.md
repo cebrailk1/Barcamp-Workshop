@@ -84,4 +84,4 @@ npx @marp-team/marp-cli slides/proxy-pattern.md --pdf --allow-local-files
 
 ## Authors
 
-*<your names here>* — Gruppe <x>, Barcamp "Design Patterns"
+**Cebrail K. & Tiago D.** — Barcamp "Design Patterns"
