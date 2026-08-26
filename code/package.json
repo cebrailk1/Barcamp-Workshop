@@ -10,7 +10,9 @@
     "demo4": "tsx src/04-logging-proxy.ts",
     "demo5": "tsx src/05-native-js-proxy.ts",
     "exercise": "tsx exercise/starter/exercise.ts",
-    "exercise:solution": "tsx exercise/solution/solution.ts"
+    "exercise2": "tsx exercise/starter/exercise2.ts",
+    "exercise:solution": "tsx exercise/solution/solution.ts",
+    "exercise:solution2": "tsx exercise/solution/solution2.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
