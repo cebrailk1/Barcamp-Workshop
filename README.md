@@ -5,7 +5,7 @@ A 60-minute interactive **Barcamp workshop** on the **Proxy pattern**
 Design Thinking & Entrepreneurship workshop.
 
 Everything you need lives in this repository: concept, slides,
-runnable demos and a hands-on exercise with a model answer.
+runnable demos and two hands-on exercises with model answers.
 
 ## What is the Proxy pattern?
 
@@ -18,8 +18,8 @@ runnable demos and a hands-on exercise with a model answer.
 | Variant | Use case | Example in this repo |
 |---|---|---|
 | Virtual proxy | expensive objects created/loaded lazily | `02-virtual-proxy.ts` |
-| Caching proxy | repeated requests answered from memory | `02-virtual-proxy.ts` |
-| Protection proxy | access control by role/permission | `03-protection-proxy.ts` |
+| Caching proxy | repeated requests answered from memory | `02-virtual-proxy.ts`, exercise 1 |
+| Protection proxy | access control by role/permission | `03-protection-proxy.ts`, exercise 2 |
 | Logging/timing proxy | cross-cutting concerns around any call | `04-logging-proxy.ts` |
 | Remote proxy | stand-in for an object in another process/network | discussed, not coded |
 
@@ -27,33 +27,14 @@ runnable demos and a hands-on exercise with a model answer.
 (open/closed principle — behaviour added without touching existing code).
 **Drawbacks:** extra indirection, more classes, can hide latency.
 
-## Repository structure
-
-```
-proxy-pattern-workshop/
-├── README.md                  <- you are here
-├── docs/
-│   └── workshop-concept.md    learning goals, 60-min run sheet, prep checklist
-├── slides/
-│   └── proxy-pattern.md       Marp slide deck (English)
-├── assets/
-│   └── uml-proxy.svg          UML class diagram
-└── code/
-    ├── src/                   five runnable demos
-    └── exercise/              hands-on task: starter + model answer
-```
-
-## Requirements
-
-- Node.js ≥ 18 (<https://nodejs.org>)
-- npm (comes with Node)
-
 ## Quick start
 
+**Requirement: Node.js ≥ 22.18** (<https://nodejs.org>) — that's it.
+Node runs the TypeScript files directly, so there is **no `npm install`,
+no build step and nothing to download on the day.**
+
 ```bash
-git clone <this-repo>
-cd proxy-pattern-workshop/code
-npm install
+cd Barcamp-Workshop/code
 
 npm run demo1     # the problem: direct calls to an expensive service
 npm run demo2     # virtual/caching proxy
@@ -61,8 +42,41 @@ npm run demo3     # protection proxy (roles)
 npm run demo4     # logging/timing proxy
 npm run demo5     # bonus: native JavaScript Proxy object
 
-npm run exercise            # hands-on starter (your turn!)
-npm run exercise:solution   # model answer
+npm run exercise             # hands-on 1: caching proxy (your turn!)
+npm run exercise:solution    # model answer
+npm run exercise2            # hands-on 2: protection proxy (fast finishers)
+npm run exercise:solution2   # model answer
+```
+
+Every script is just `node <file>` — you can also run the files directly:
+
+```bash
+node src/01-problem.ts
+```
+
+### No Node? No problem.
+
+Double-click **`workshop.html`** in the repository root. It opens in any
+browser, works completely offline, and contains the glossary, the runnable
+demos and both exercises with Run and Check buttons. Nothing to install,
+nothing to deploy.
+
+## Repository structure
+
+```
+Barcamp-Workshop/
+├── README.md                  <- you are here
+├── workshop.html              offline handout + interactive exercises
+├── docs/
+│   └── workshop-concept.md    learning goals, 60-min run sheet, prep checklist
+├── slides/
+│   ├── proxy-pattern.md       Marp slide deck (English)
+│   └── proxy-pattern.pdf      exported deck (offline backup)
+├── assets/
+│   └── uml-proxy.svg          UML class diagram
+└── code/
+    ├── src/                   five runnable demos
+    └── exercise/              two hands-on tasks: starters + model answers
 ```
 
 ## Slides
@@ -73,14 +87,13 @@ The deck is written in [Marp](https://marp.app/) Markdown. Render to PDF:
 npx @marp-team/marp-cli slides/proxy-pattern.md --pdf --allow-local-files
 ```
 
-## Session agenda (60 min)
+`--allow-local-files` is **required** — without it the UML slide exports blank.
 
-1. Welcome & warm-up poll (5')
-2. Problem demo + definition + UML (10')
-3. Live coding: caching & protection proxies (15')
-4. Hands-on: build your own caching proxy in pairs (15')
-5. Model answer + Proxy vs. Decorator/Adapter/Facade (10')
-6. Takeaways + Fist-to-Five feedback (5')
+## Session agenda
+
+The run sheet in [`docs/workshop-concept.md`](docs/workshop-concept.md#3-run-sheet)
+is the single source of truth for timing. It is deliberately not repeated here,
+so the two can never drift apart.
 
 ## Authors
 

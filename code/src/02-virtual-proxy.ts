@@ -37,7 +37,7 @@ class CachingImageProxy implements ImageService {
   fetch(filename: string): string {
     // 1. cache hit? -> no network at all
     const cached = this.cache.get(filename);
-    if (cached) {
+    if (cached !== undefined) {   // NOT `if (cached)` - a cached "" would miss!
       console.log(`   [PROXY ] cache hit for "${filename}"`);
       return cached;
     }
@@ -57,10 +57,14 @@ class CachingImageProxy implements ImageService {
 
 function openGallery(service: ImageService): void {
   const start = Date.now();
+  // A real gallery page shows the same thumbnails over and over:
+  // 6 requests, but only 3 different pictures.
   service.fetch("cat.png");
   service.fetch("dog.png");
-  service.fetch("cat.png"); // now served from cache!
+  service.fetch("cat.png"); // again
   service.fetch("parrot.png");
+  service.fetch("dog.png"); // again
+  service.fetch("cat.png"); // and again
   console.log(`Page ready after ${Date.now() - start} ms\n`);
 }
 

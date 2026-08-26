@@ -1,20 +1,7 @@
 /**
- * HANDS-ON EXERCISE - Protection Proxy
+ * MODEL ANSWER - ProtectedDocumentProxy (with access log bonus)
  *
- * Szenario: Ein Dokumenten-System erlaubt das Lesen und Löschen
- * von Dokumenten. ABER: Löschen dürfen nur Nutzer mit der Rolle "admin".
- *
- * Deine Mission: Implementiere `ProtectedDocumentProxy` so, dass:
- *   1. `readDocument()` IMMER funktioniert (für jede Rolle)
- *   2. `deleteDocument()` nur ausgeführt wird, wenn role === "admin"
- *   3. bei fehlender Berechtigung wird NICHT gelöscht, sondern
- *      eine verständliche Meldung zurückgegeben (kein Crash!)
- *   4. der Client-Code unten bleibt UNVERÄNDERT
- *
- * Bonus (wenn du schnell bist):
- *   5. logge jeden Zugriffsversuch (erlaubt/verweigert) mit Rolle + Aktion
- *   6. füge eine Methode `getAccessLog()` hinzu, die alle Versuche
- *      als Liste zurückgibt
+ * Run: node exercise/solution/solution2.ts
  */
 
 // ---------- given code: do NOT change ------------------------------------
@@ -26,56 +13,54 @@ interface DocumentService {
 
 class RealDocumentService implements DocumentService {
   private documents: Record<string, string> = {
-    "vertrag.pdf": "Inhalt: Vertragsdetails...",
-    "geheim.pdf": "Inhalt: Streng vertraulich...",
+    "contract.pdf": "Content: contract details ...",
+    "secret.pdf": "Content: strictly confidential ...",
   };
 
   readDocument(name: string): string {
-    return this.documents[name] ?? "Dokument nicht gefunden";
+    return this.documents[name] ?? "document not found";
   }
 
   deleteDocument(name: string): string {
     delete this.documents[name];
-    return `"${name}" wurde gelöscht.`;
+    return `"${name}" was deleted.`;
   }
 }
 
-// ---------- SOLUTION -------------------------------------------------------
+// ---------- model answer --------------------------------------------------
 
 class ProtectedDocumentProxy implements DocumentService {
-  // TODO 1: Access-Log
   private accessLog: string[] = [];
+  private real: DocumentService;
+  private role: "admin" | "guest";
 
-  constructor(
-    private real: DocumentService,
-    private role: "admin" | "guest"
-  ) {}
+  constructor(real: DocumentService, role: "admin" | "guest") {
+    this.real = real;
+    this.role = role;
+  }
 
   readDocument(name: string): string {
-    // TODO 2: Lesen ist immer erlaubt -> einfach durchreichen
+    // reading is always allowed -> pass straight through
     this.log("read", name, true);
     return this.real.readDocument(name);
   }
 
   deleteDocument(name: string): string {
-    // TODO 3 + 4: nur Admins dürfen löschen
     if (this.role !== "admin") {
       this.log("delete", name, false);
-      return `Zugriff verweigert: Rolle "${this.role}" darf "${name}" nicht löschen.`;
+      return `Access denied: role "${this.role}" may not delete "${name}".`;
     }
 
     this.log("delete", name, true);
     return this.real.deleteDocument(name);
   }
 
-  // TODO 6 (bonus): getAccessLog()
   getAccessLog(): string[] {
     return [...this.accessLog];
   }
 
   private log(action: string, name: string, allowed: boolean): void {
-    const status = allowed ? "ERLAUBT" : "VERWEIGERT";
-    const entry = `[${status}] Rolle "${this.role}" -> ${action}("${name}")`;
+    const entry = `[${allowed ? "ALLOWED" : "DENIED "}] role "${this.role}" -> ${action}("${name}")`;
     console.log(`   [ACCESS] ${entry}`);
     this.accessLog.push(entry);
   }
@@ -83,32 +68,39 @@ class ProtectedDocumentProxy implements DocumentService {
 
 // ---------- client code: do NOT change ------------------------------------
 
-const guestService: DocumentService = new ProtectedDocumentProxy(
-  new RealDocumentService(),
-  "guest"
-);
-const adminService: DocumentService = new ProtectedDocumentProxy(
-  new RealDocumentService(),
-  "admin"
-);
+const store = new RealDocumentService();
+const asGuest: DocumentService = new ProtectedDocumentProxy(store, "guest");
+const asAdmin: DocumentService = new ProtectedDocumentProxy(store, "admin");
 
-console.log("Guest versucht zu lesen und zu löschen:");
-console.log(guestService.readDocument("vertrag.pdf"));
-console.log(guestService.deleteDocument("vertrag.pdf"));
+console.log("Guest tries to read and to delete:");
+console.log(`   read  -> ${asGuest.readDocument("contract.pdf")}`);
+console.log(`   delete-> ${asGuest.deleteDocument("contract.pdf")}`);
 
-console.log("\nAdmin versucht zu lesen und zu löschen:");
-console.log(adminService.readDocument("geheim.pdf"));
-console.log(adminService.deleteDocument("geheim.pdf"));
+console.log("\nAdmin tries to read and to delete:");
+console.log(`   read  -> ${asAdmin.readDocument("secret.pdf")}`);
+console.log(`   delete-> ${asAdmin.deleteDocument("secret.pdf")}`);
 
-const works =
-  guestService.readDocument("vertrag.pdf").includes("Vertragsdetails") &&
-  guestService.deleteDocument("vertrag.pdf").toLowerCase().includes("nicht") &&
-  adminService.deleteDocument("geheim.pdf").includes("gelöscht");
+// Every check tells you exactly what is still missing.
+const guestDelete = asGuest.deleteDocument("contract.pdf");
+const checks: Array<[boolean, string]> = [
+  [asGuest.readDocument("contract.pdf").includes("contract details"),
+    "a guest must still be able to READ contract.pdf"],
+  [guestDelete.toLowerCase().includes("denied"),
+    'a denied delete must return a message containing "denied"'],
+  [store.readDocument("contract.pdf").includes("contract details"),
+    "contract.pdf must STILL EXIST - the guest's delete must never reach the real store"],
+  [!store.readDocument("secret.pdf").includes("confidential"),
+    "the admin's delete must actually go through to the real store"],
+];
 
-console.log(
-  works
-    ? "\nSUCCESS - Zugriffskontrolle funktioniert!"
-    : "\nNoch nicht - arbeite die TODOs durch!"
-);
+const failed = checks.filter(([ok]) => !ok);
 
+if (failed.length === 0) {
+  console.log("\nSUCCESS - access control works!");
+} else {
+  console.log("\nNot yet:");
+  for (const [, why] of failed) console.log(`  - ${why}`);
+}
+
+// makes this file a standalone module (isolated scope)
 export {};

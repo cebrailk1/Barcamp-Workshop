@@ -4,6 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
+    // keeps the code runnable with plain `node file.ts` (no build, no npm install):
+    // rejects TS syntax that cannot be erased, e.g. parameter properties and enums
+    "erasableSyntaxOnly": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true

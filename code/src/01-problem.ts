@@ -32,15 +32,17 @@ const service = new RemoteImageService();
 console.log("Opening the gallery page ...");
 const start = Date.now();
 
-// Page shows three thumbnails - one of them twice.
+// The page shows 6 thumbnails - but only 3 different pictures.
 service.fetch("cat.png");
 service.fetch("dog.png");
 service.fetch("cat.png"); // same file, downloaded AGAIN!
 service.fetch("parrot.png");
+service.fetch("dog.png"); // and again ...
+service.fetch("cat.png"); // ... and again
 
 console.log(`Page ready after ${Date.now() - start} ms`);
 console.log("\nProblems:");
-console.log("  1. cat.png was downloaded twice        -> wasted bandwidth");
+console.log("  1. cat.png was downloaded 3x           -> wasted bandwidth");
 console.log("  2. everything loads eagerly            -> slow first paint");
 console.log("  3. ANYONE can call fetch()             -> no access control");
 console.log("  4. client is welded to the real class  -> hard to extend");

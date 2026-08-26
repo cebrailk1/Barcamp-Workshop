@@ -29,7 +29,11 @@ class OpenWeatherService implements WeatherService {
 class LoggingProxy implements WeatherService {
   private callCount = 0;
 
-  constructor(private real: WeatherService) {}
+  private real: WeatherService;
+
+  constructor(real: WeatherService) {
+    this.real = real;
+  }
 
   getTemperature(city: string): number {
     this.callCount++;

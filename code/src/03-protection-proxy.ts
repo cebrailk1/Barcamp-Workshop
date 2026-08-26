@@ -37,7 +37,11 @@ class RealDocumentStore implements DocumentStore {
 }
 
 class ProtectionProxy implements DocumentStore {
-  constructor(private real: RealDocumentStore) {}
+  private real: RealDocumentStore;
+
+  constructor(real: RealDocumentStore) {
+    this.real = real;
+  }
 
   read(docId: string, user: User): string {
     if (user.role === "guest" && docId === "salaries") {

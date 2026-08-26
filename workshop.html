@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proxy Pattern Workshop</title>
+<style>
+/* ---------- tokens: complete light palette ---------- */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fa;
+  --ink:#131820; --muted:#5a6675; --line:#d3dae3; --line-soft:#e3e8ee;
+  --proxy:#c2410c; --proxy-soft:#fdf0e8;
+  --net:#1e5fa8;   --net-soft:#e9f0f9;
+  --ok:#15803d; --ok-soft:#e8f4ec;
+  --bad:#b91c1c; --bad-soft:#fbeceb;
+  --focus:#1e5fa8; --on-proxy:#ffffff;
+  --shadow:0 1px 2px rgba(19,24,32,.06), 0 8px 24px -12px rgba(19,24,32,.18);
+  /* the console is a committed dark component in both themes */
+  --term-bg:#11161d; --term-ink:#c9d4e0; --term-dim:#6b7a8d;
+  --term-proxy:#fb923c; --term-net:#6aa9f0; --term-ok:#4ade80; --term-bad:#f87171;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1117; --surface:#161b22; --surface-2:#1b222b;
+    --ink:#e3eaf2; --muted:#93a1b1; --line:#2a323c; --line-soft:#222a34;
+    --proxy:#fb923c; --proxy-soft:#2a1a10;
+    --net:#68adfa;   --net-soft:#101f33;
+    --ok:#4ade80; --ok-soft:#0f2418;
+    --bad:#f87171; --bad-soft:#2b1414;
+    --focus:#68adfa; --on-proxy:#1a1005;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1117; --surface:#161b22; --surface-2:#1b222b;
+  --ink:#e3eaf2; --muted:#93a1b1; --line:#2a323c; --line-soft:#222a34;
+  --proxy:#fb923c; --proxy-soft:#2a1a10;
+  --net:#68adfa;   --net-soft:#101f33;
+  --ok:#4ade80; --ok-soft:#0f2418;
+  --bad:#f87171; --bad-soft:#2b1414;
+  --focus:#68adfa; --on-proxy:#1a1005;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:17px; line-height:1.65;
+}
+code,kbd,pre,textarea,.mono{
+  font-family:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
+}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.masthead{border-bottom:1px solid var(--line);background:var(--surface)}
+.masthead .wrap{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;padding-top:38px;padding-bottom:26px}
+.eyebrow{
+  font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 10px
+}
+.masthead h1{
+  font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:clamp(26px,4.4vw,42px);line-height:1.1;letter-spacing:-.02em;margin:0;
+  font-weight:700;text-wrap:balance;
+}
+.masthead h1 .arrow{color:var(--proxy)}
+.masthead p.lede{margin:12px 0 0;max-width:56ch;color:var(--muted)}
+.tools{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:44px;align-items:start;padding-top:36px;padding-bottom:80px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:0}}
+
+nav.rail{position:sticky;top:20px;font-size:14px}
+@media (max-width:900px){nav.rail{position:static;margin-bottom:32px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px 16px}}
+nav.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+nav.rail a{
+  display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+  padding:5px 8px;border-radius:6px;border-left:2px solid transparent;margin-left:-10px;
+}
+nav.rail a:hover{color:var(--ink);background:var(--surface)}
+nav.rail a.on{color:var(--ink);border-left-color:var(--proxy);background:var(--surface);font-weight:600}
+nav.rail .n{
+  font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--proxy);
+  font-variant-numeric:tabular-nums;flex-shrink:0
+}
+nav.rail .sep{height:1px;background:var(--line);margin:10px 0 8px}
+
+main{min-width:0;display:flex;flex-direction:column;gap:56px}
+section{scroll-margin-top:24px}
+h2{
+  font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:23px;letter-spacing:-.01em;margin:0 0 6px;font-weight:700;text-wrap:balance;
+}
+h2 .beat{color:var(--proxy);font-size:13px;letter-spacing:.1em;display:block;margin-bottom:8px;font-weight:400}
+h3{font-size:17px;margin:0 0 8px;font-weight:700}
+p{margin:0 0 14px;max-width:68ch}
+main ul,main ol{max-width:68ch;padding-left:22px;margin:0 0 14px}
+main li{margin-bottom:6px}
+a{color:var(--net)}
+.sub{color:var(--muted);font-size:15px}
+.stack{display:flex;flex-direction:column;gap:18px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow)}
+.callout{border-left:3px solid var(--proxy);background:var(--proxy-soft);border-radius:0 10px 10px 0;padding:14px 18px}
+.callout p:last-child{margin-bottom:0}
+
+/* ---------- red thread ---------- */
+.thesis{
+  font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:clamp(17px,2.3vw,21px);line-height:1.5;border:1px solid var(--line);
+  border-left:3px solid var(--proxy);background:var(--surface);border-radius:0 12px 12px 0;
+  padding:22px 24px;margin:0 0 22px;max-width:none;
+}
+.thesis b{color:var(--proxy);font-weight:700}
+.beats{list-style:none;padding:0;margin:0;display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;max-width:none}
+.beats li{margin:0;background:var(--surface);padding:13px 18px;display:grid;grid-template-columns:26px 1fr;gap:14px;align-items:baseline}
+.beats .n{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--proxy);font-variant-numeric:tabular-nums}
+.beats b{display:block}
+.beats span.d{color:var(--muted);font-size:15px}
+.beats .t{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);float:right}
+
+/* ---------- console ---------- */
+.demo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.demo-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+.demo-head h3{margin:0}
+.demo-head .file{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.demo-body{padding:16px 18px 18px}
+.demo-body > p:last-of-type{margin-bottom:14px}
+.predict{
+  font-size:14px;color:var(--muted);border-left:2px solid var(--line);padding-left:12px;margin:0 0 14px;max-width:68ch
+}
+.predict b{color:var(--ink)}
+
+pre.code{
+  background:var(--surface-2);border:1px solid var(--line-soft);border-radius:9px;
+  padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.6;margin:0 0 14px
+}
+pre.code .c{color:var(--muted)}
+pre.code .k{color:var(--net);font-weight:600}
+pre.code .s{color:var(--proxy)}
+
+.term{
+  background:var(--term-bg);color:var(--term-ink);border-radius:9px;padding:14px 16px;
+  font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;
+  overflow-x:auto;min-height:52px;margin:0
+}
+.term:empty::before{content:"› output appears here";color:var(--term-dim)}
+.term .p{color:var(--term-proxy)}
+.term .n{color:var(--term-net)}
+.term .g{color:var(--term-ok)}
+.term .b{color:var(--term-bad)}
+.term .d{color:var(--term-dim)}
+
+button{
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  padding:8px 15px;transition:background .12s ease,border-color .12s ease;
+}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:disabled{opacity:.55;cursor:progress}
+button.primary{background:var(--proxy);border-color:var(--proxy);color:var(--on-proxy)}
+button.primary:hover:not(:disabled){filter:brightness(1.08)}
+button.ghost{background:transparent}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.btnrow .spacer{flex:1}
+
+/* ---------- exercise ---------- */
+textarea.editor{
+  width:100%;display:block;background:var(--term-bg);color:var(--term-ink);
+  border:1px solid var(--line);border-radius:9px;padding:14px 16px;
+  font-size:13px;line-height:1.65;resize:vertical;min-height:300px;tab-size:2;
+}
+textarea.editor:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.verdict{border-radius:9px;padding:13px 16px;font-size:15px;margin:14px 0 0;display:none}
+.verdict.show{display:block}
+.verdict.pass{background:var(--ok-soft);border:1px solid var(--ok);color:var(--ok)}
+.verdict.fail{background:var(--bad-soft);border:1px solid var(--bad);color:var(--bad)}
+.verdict b{display:block;margin-bottom:6px;color:inherit}
+.verdict ul{margin:0;padding-left:20px;max-width:68ch}
+.verdict li{color:var(--ink)}
+.hints{margin:14px 0 0;display:flex;flex-direction:column;gap:8px}
+.hint{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:11px 15px;font-size:15px;display:flex;gap:11px}
+.hint .n{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--proxy);flex-shrink:0;padding-top:3px}
+details.sol{margin-top:14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);overflow:hidden}
+details.sol summary{padding:11px 16px;cursor:pointer;font-weight:600;font-size:15px;list-style:none}
+details.sol summary::-webkit-details-marker{display:none}
+details.sol summary::before{content:"▸ ";color:var(--proxy)}
+details.sol[open] summary::before{content:"▾ "}
+details.sol .demo-body{padding-top:0}
+.done-tag{font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--ok);letter-spacing:.06em}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{
+  font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;background:var(--surface-2)
+}
+tbody tr:last-child td{border-bottom:0}
+td.term-cell{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;color:var(--proxy);white-space:nowrap}
+td code{font-size:13px}
+
+/* ---------- diagram ---------- */
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 18px 16px;box-shadow:var(--shadow);overflow-x:auto}
+.figure svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.figure figcaption{font-size:13.5px;color:var(--muted);text-align:center;margin-top:14px;max-width:60ch;margin-left:auto;margin-right:auto}
+
+/* ---------- misc ---------- */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:16px}
+.kv{font-size:15px}
+.kv b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--proxy);margin-bottom:5px}
+.kv p{margin:0;color:var(--muted)}
+footer{border-top:1px solid var(--line);background:var(--surface);padding:26px 0;font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+
+@media print{
+  body{background:#fff;font-size:11pt}
+  nav.rail,.tools,.btnrow,textarea.editor,.term{display:none}
+  .layout{display:block;padding:0}
+  main{gap:26px}
+  section{break-inside:avoid}
+  .card,.demo,.figure,.thesis{box-shadow:none;border:1px solid #bbb}
+  details.sol[open] summary{display:none}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Barcamp · Structural design patterns</p>
+      <h1>Client <span class="arrow">→</span> Proxy <span class="arrow">→</span> Real Service</h1>
+      <p class="lede">Everything from the session in one page: the thread of the talk, the words
+        you need, the demos, and both exercises with a Run button. Works offline. Nothing to install.</p>
+    </div>
+    <div class="tools">
+      <button id="theme" class="ghost" type="button" aria-label="Switch colour theme">◐ Theme</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+
+<nav class="rail" aria-label="Sections">
+  <ol id="rail">
+    <li><a href="#thread"><span class="n">00</span> The red thread</a></li>
+    <li><a href="#problem"><span class="n">01</span> The problem</a></li>
+    <li><a href="#what"><span class="n">02</span> What a proxy is</a></li>
+    <li><a href="#guard"><span class="n">03</span> Guarding access</a></li>
+    <li><a href="#compare"><span class="n">04</span> vs. Decorator</a></li>
+    <li><a href="#builtin"><span class="n">05</span> Built into JS</a></li>
+    <li><a href="#hands-on"><span class="n">06</span> Your turn</a></li>
+    <li><div class="sep"></div></li>
+    <li><a href="#words"><span class="n">§</span> Important words</a></li>
+    <li><a href="#gotcha"><span class="n">§</span> Good to know</a></li>
+    <li><a href="#cheat"><span class="n">§</span> Cheat sheet</a></li>
+    <li><a href="#run"><span class="n">§</span> Run it yourself</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ===================== 00 RED THREAD ===================== -->
+<section id="thread">
+  <h2><span class="beat">00 — for the presenter</span>The red thread</h2>
+  <p class="thesis">A proxy is a stand-in with the <b>same interface</b> as the real thing —
+    so you can add caching, guards and logging <b>without the client or the real class
+    ever finding out</b>.</p>
+  <p>Every beat of the session is one step of that sentence. If you lose the thread, come back here.</p>
+  <ol class="beats">
+    <li><span class="n">01</span><span><b>Feel the problem <span class="t">4–9</span></b>
+      <span class="d">Six thumbnails, three pictures, 2400 ms. Let the room say what is wrong before you name anything.</span></span></li>
+    <li><span class="n">02</span><span><b>Name the shape <span class="t">9–22</span></b>
+      <span class="d">One interface, two classes behind it. Then cache it — 2400 ms becomes 1200 ms, client untouched.</span></span></li>
+    <li><span class="n">03</span><span><b>Guard it <span class="t">22–27</span></b>
+      <span class="d">Same shape, different job: the proxy now decides <em>who</em>, not <em>when</em>.</span></span></li>
+    <li><span class="n">04</span><span><b>Separate it from its neighbours <span class="t">22–27</span></b>
+      <span class="d">Proxy vs. Decorator. Do this while the guard is still on screen — it is the exam question.</span></span></li>
+    <li><span class="n">05</span><span><b>Show the language does it for you <span class="t">27–31</span></b>
+      <span class="d">One handler, every method. This is Vue 3 reactivity. The wow moment — give it air.</span></span></li>
+    <li><span class="n">06</span><span><b>Hand it over <span class="t">31–46</span></b>
+      <span class="d">They build the caching proxy themselves. Float, hint, never solve it for them.</span></span></li>
+  </ol>
+</section>
+
+<!-- ===================== 01 PROBLEM ===================== -->
+<section id="problem">
+  <h2><span class="beat">01 — the problem</span>The same picture, downloaded three times</h2>
+  <p>A gallery app talks <em>directly</em> to a remote image service. Every thumbnail is a
+    400 ms network call, and the page shows the same cat three times.</p>
+
+  <div class="demo">
+    <div class="demo-head"><h3>Demo 1 · the problem</h3><span class="file">code/src/01-problem.ts</span></div>
+    <div class="demo-body">
+      <p class="predict"><b>Predict first:</b> six thumbnails, three different pictures,
+        400 ms per download. How long until the page is ready?</p>
+      <div class="btnrow"><button class="primary" data-demo="d1" type="button">Run demo 1</button>
+        <span class="sub" data-note="d1"></span></div>
+      <pre class="term" id="out-d1"></pre>
+    </div>
+  </div>
+
+  <p style="margin-top:18px">Four separate problems, one root cause: the client is welded to the
+    real class, so there is nowhere to put a fix. The question that opens the whole session —
+    <em>can we fix this without touching <code>RemoteImageService</code>?</em></p>
+</section>
+
+<!-- ===================== 02 WHAT ===================== -->
+<section id="what">
+  <h2><span class="beat">02 — the pattern</span>What a proxy actually is</h2>
+  <p>A proxy is an object with the <strong>same interface</strong> as a real service. Clients talk
+    to the proxy; the proxy controls <strong>whether, when and how</strong> the real service is used.
+    Because the interface matches, the client cannot tell the difference — and does not need to.</p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 760 260" role="img" aria-label="Class diagram: Client depends on the ImageService interface; RemoteImageService and CachingImageProxy both implement it; the proxy holds a reference to the real service.">
+      <defs>
+        <marker id="hollow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+          <path d="M1 1 L11 6 L1 11 z" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.4"/>
+        </marker>
+        <marker id="solid" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+          <path d="M0 1 L9 5 L0 9 z" fill="var(--proxy)"/>
+        </marker>
+        <marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+          <path d="M0 1 L9 5 L0 9" fill="none" stroke="var(--muted)" stroke-width="1.4"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="12">
+        <!-- interface -->
+        <rect x="290" y="12" width="180" height="52" rx="7" fill="var(--net-soft)" stroke="var(--net)" stroke-width="1.4"/>
+        <text x="380" y="31" text-anchor="middle" fill="var(--net)" font-size="10.5">«interface»</text>
+        <text x="380" y="47" text-anchor="middle" fill="var(--ink)" font-weight="700">ImageService</text>
+        <text x="380" y="59" text-anchor="middle" fill="var(--muted)" font-size="10">+ fetch(name)</text>
+        <!-- client -->
+        <rect x="20" y="20" width="132" height="38" rx="7" fill="var(--surface-2)" stroke="var(--line)" stroke-width="1.4"/>
+        <text x="86" y="44" text-anchor="middle" fill="var(--ink)" font-weight="700">Client</text>
+        <path d="M154 39 H286" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4" fill="none" marker-end="url(#open)"/>
+        <text x="220" y="31" text-anchor="middle" fill="var(--muted)" font-size="10">knows only this</text>
+        <!-- proxy -->
+        <rect x="176" y="140" width="216" height="94" rx="7" fill="var(--proxy-soft)" stroke="var(--proxy)" stroke-width="1.6"/>
+        <text x="284" y="161" text-anchor="middle" fill="var(--proxy)" font-weight="700">CachingImageProxy</text>
+        <line x1="176" y1="170" x2="392" y2="170" stroke="var(--proxy)" stroke-width="1"/>
+        <text x="188" y="187" fill="var(--ink)" font-size="10.5">- cache: Map</text>
+        <text x="188" y="203" fill="var(--ink)" font-size="10.5">- real: ImageService | null</text>
+        <text x="188" y="223" fill="var(--ink)" font-size="10.5" font-weight="700">+ fetch(name)</text>
+        <!-- real -->
+        <rect x="470" y="140" width="216" height="94" rx="7" fill="var(--surface-2)" stroke="var(--line)" stroke-width="1.4"/>
+        <text x="578" y="161" text-anchor="middle" fill="var(--ink)" font-weight="700">RemoteImageService</text>
+        <line x1="470" y1="170" x2="686" y2="170" stroke="var(--line)" stroke-width="1"/>
+        <text x="482" y="187" fill="var(--muted)" font-size="10.5">- latencyMs = 400</text>
+        <text x="482" y="223" fill="var(--ink)" font-size="10.5" font-weight="700">+ fetch(name)</text>
+        <!-- implements -->
+        <path d="M284 138 V100 H352 V70" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4" fill="none" marker-end="url(#hollow)"/>
+        <path d="M578 138 V100 H410 V70" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4" fill="none" marker-end="url(#hollow)"/>
+        <!-- delegation -->
+        <path d="M394 195 H466" stroke="var(--proxy)" stroke-width="1.8" fill="none" marker-end="url(#solid)"/>
+        <text x="430" y="187" text-anchor="middle" fill="var(--proxy)" font-size="10">delegates</text>
+      </g>
+    </svg>
+    <figcaption>Dashed line with a hollow triangle = <em>implements</em>. Solid orange arrow = the proxy
+      <em>holds a reference</em> to the real service and passes work along — but only when it decides to.</figcaption>
+  </figure>
+
+  <p style="margin-top:22px">The whole trick is that both classes sit under one interface. Swap the
+    object, keep the client:</p>
+
+  <div class="demo">
+    <div class="demo-head"><h3>Demo 2 · caching &amp; lazy loading</h3><span class="file">code/src/02-virtual-proxy.ts</span></div>
+    <div class="demo-body">
+<pre class="code"><span class="k">class</span> CachingImageProxy <span class="k">implements</span> ImageService {
+  <span class="k">private</span> cache = <span class="k">new</span> Map();
+  <span class="k">private</span> real = <span class="k">null</span>;              <span class="c">// not created yet — lazy!</span>
+
+  fetch(name) {
+    <span class="k">const</span> hit = <span class="k">this</span>.cache.get(name);
+    <span class="k">if</span> (hit !== <span class="k">undefined</span>) <span class="k">return</span> hit;   <span class="c">// 1. cache first</span>
+    <span class="k">this</span>.real ??= <span class="k">new</span> RemoteImageService(); <span class="c">// 2. build it on first real use</span>
+    <span class="k">const</span> data = <span class="k">this</span>.real.fetch(name);   <span class="c">// 3. delegate</span>
+    <span class="k">this</span>.cache.set(name, data);           <span class="c">// 4. remember</span>
+    <span class="k">return</span> data;
+  }
+}</pre>
+      <p class="predict"><b>Predict first:</b> the same gallery, the same client function, now handed
+        a proxy instead of the real service. What happens to the 2400 ms?</p>
+      <div class="btnrow"><button class="primary" data-demo="d2" type="button">Run demo 2</button>
+        <span class="sub" data-note="d2"></span></div>
+      <pre class="term" id="out-d2"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 03 GUARD ===================== -->
+<section id="guard">
+  <h2><span class="beat">03 — protection proxy</span>Same shape, different job</h2>
+  <p>Nothing about the pattern says "cache". Keep the shape, change what the proxy decides:
+    now it checks <em>who</em> is calling. The real store stays simple — it can trust that
+    every call that reaches it was already authorised.</p>
+
+  <div class="demo">
+    <div class="demo-head"><h3>Demo 3 · access control</h3><span class="file">code/src/03-protection-proxy.ts</span></div>
+    <div class="demo-body">
+<pre class="code">delete(docId, user) {
+  <span class="k">if</span> (user.role !== <span class="s">"admin"</span>) {
+    console.log(<span class="s">"403 — only admins may delete"</span>);
+    <span class="k">return</span>;                        <span class="c">// never reaches the store</span>
+  }
+  <span class="k">this</span>.real.delete(docId, user);   <span class="c">// authorised → delegate</span>
+}</pre>
+      <div class="btnrow"><button class="primary" data-demo="d3" type="button">Run demo 3</button>
+        <span class="sub" data-note="d3"></span></div>
+      <pre class="term" id="out-d3"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 04 COMPARE ===================== -->
+<section id="compare">
+  <h2><span class="beat">04 — the exam question</span>Proxy vs. Decorator vs. Adapter vs. Facade</h2>
+  <p>All four wrap something. They are told apart by the question each one answers:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Pattern</th><th>Interface</th><th>The question it answers</th></tr></thead>
+      <tbody>
+        <tr><td class="term-cell">Proxy</td><td>same</td><td>May this call happen, and when? <em>Controls access.</em></td></tr>
+        <tr><td class="term-cell">Decorator</td><td>same</td><td>What else should happen around it? <em>Adds behaviour.</em></td></tr>
+        <tr><td class="term-cell">Adapter</td><td>different</td><td>How do I make these two fit together?</td></tr>
+        <tr><td class="term-cell">Facade</td><td>new, simpler</td><td>How do I give this whole subsystem one front door?</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:18px">
+    <p><strong>The sharpest way to tell Proxy from Decorator:</strong> a decorator always delegates —
+      it wraps the real call and adds to it. A proxy may decide <em>not to call the real object at all</em>
+      (cache hit, denied permission, object not created yet). If your wrapper can return without ever
+      touching the real thing, it is a proxy.</p>
+  </div>
+</section>
+
+<!-- ===================== 05 BUILTIN ===================== -->
+<section id="builtin">
+  <h2><span class="beat">05 — the wow moment</span>JavaScript has this built in</h2>
+  <p>Writing a logging proxy by hand means one wrapper method for <em>every</em> method — boring,
+    and it grows with the class. JavaScript ships a <code>Proxy</code> object that applies the idea to
+    every property at once, with a single handler.</p>
+
+  <div class="demo">
+    <div class="demo-head"><h3>Demo 5 · native <code>Proxy</code></h3><span class="file">code/src/05-native-js-proxy.ts</span></div>
+    <div class="demo-body">
+<pre class="code"><span class="k">function</span> withLogging(target, label) {
+  <span class="k">return new</span> Proxy(target, {
+    get(obj, prop) { <span class="c">/* wraps every method automatically */</span> }
+  });
+}</pre>
+      <div class="btnrow"><button class="primary" data-demo="d5" type="button">Run demo 5</button>
+        <span class="sub" data-note="d5"></span></div>
+      <pre class="term" id="out-d5"></pre>
+      <p class="sub" style="margin-top:14px">The same object, zero changes to it, full logging — and it
+        works on <em>anything</em>, including a plain calculator. This exact mechanism powers Vue 3
+        reactivity and MobX.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 06 HANDS ON ===================== -->
+<section id="hands-on">
+  <h2><span class="beat">06 — your turn</span>Build your own proxy</h2>
+  <p>Work in pairs, one laptop is enough, swap who types after 7 minutes. Edit the code below and
+    press <strong>Run</strong> to see the output, or <strong>Check</strong> to test it. Your work is
+    saved in this browser, so you can close the tab.</p>
+
+  <div class="demo" id="ex1">
+    <div class="demo-head"><h3>Exercise 1 · CachingQuoteProxy</h3><span class="done-tag" data-done="ex1"></span></div>
+    <div class="demo-body">
+      <p>The app asks for quotes about topics. The real service takes <strong>600 ms</strong> per call,
+        and the app asks for the same topic again and again. Make it fast:</p>
+      <ol>
+        <li>fetch every topic from the real service <strong>at most once</strong></li>
+        <li>answer repeated requests <strong>instantly</strong> from a cache</li>
+        <li>leave the client code <strong>unchanged</strong> — you only touch the class below</li>
+      </ol>
+      <p class="sub">Bonus: log every cache hit, and add a <code>stats()</code> method returning
+        <code>{ hits, misses }</code>.</p>
+      <textarea class="editor" spellcheck="false" data-ex="ex1" aria-label="Exercise 1 code editor"></textarea>
+      <div class="btnrow" style="margin-top:12px">
+        <button class="primary" data-run="ex1" type="button">Run</button>
+        <button data-check="ex1" type="button">Check</button>
+        <span class="spacer"></span>
+        <button class="ghost" data-hint="ex1" type="button">Show a hint</button>
+        <button class="ghost" data-reset="ex1" type="button">Reset</button>
+      </div>
+      <pre class="term" id="out-ex1"></pre>
+      <div class="verdict" id="v-ex1"></div>
+      <div class="hints" id="h-ex1"></div>
+      <details class="sol"><summary>Show the model answer</summary>
+        <div class="demo-body"><pre class="code" id="sol-ex1"></pre></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="demo" id="ex2" style="margin-top:22px">
+    <div class="demo-head"><h3>Exercise 2 · ProtectedDocumentProxy <span class="sub">— fast finishers</span></h3><span class="done-tag" data-done="ex2"></span></div>
+    <div class="demo-body">
+      <p>Only start this once exercise 1 passes. A document system lets people read and delete
+        documents — but only an <code>admin</code> may delete:</p>
+      <ol>
+        <li><code>readDocument()</code> always works, for every role</li>
+        <li><code>deleteDocument()</code> only runs when the role is <code>admin</code></li>
+        <li>a denied delete returns a readable message containing <em>"denied"</em> — no crash,
+          and it must <strong>never reach the real store</strong></li>
+      </ol>
+      <textarea class="editor" spellcheck="false" data-ex="ex2" aria-label="Exercise 2 code editor"></textarea>
+      <div class="btnrow" style="margin-top:12px">
+        <button class="primary" data-run="ex2" type="button">Run</button>
+        <button data-check="ex2" type="button">Check</button>
+        <span class="spacer"></span>
+        <button class="ghost" data-hint="ex2" type="button">Show a hint</button>
+        <button class="ghost" data-reset="ex2" type="button">Reset</button>
+      </div>
+      <pre class="term" id="out-ex2"></pre>
+      <div class="verdict" id="v-ex2"></div>
+      <div class="hints" id="h-ex2"></div>
+      <details class="sol"><summary>Show the model answer</summary>
+        <div class="demo-body"><pre class="code" id="sol-ex2"></pre></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:20px">
+    <p><strong>Discuss in your pair:</strong> what would you cache besides quotes — and what should you
+      <em>never</em> cache? Why is checking permissions in the proxy safer than checking them inside
+      the real service?</p>
+  </div>
+</section>
+
+<!-- ===================== WORDS ===================== -->
+<section id="words">
+  <h2><span class="beat">§ — glossary</span>Important words</h2>
+  <p>The vocabulary from the session. The right-hand column is the thing that makes it stick.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Word</th><th>What it means</th><th>Fix it in memory</th></tr></thead>
+      <tbody>
+        <tr><td class="term-cell">Proxy</td><td>A stand-in object with the same interface as a real service, controlling access to it.</td><td>The Paketshop holding your parcel.</td></tr>
+        <tr><td class="term-cell">Subject</td><td>The shared interface both the proxy and the real object implement. Also called the <em>interface</em>.</td><td><code>interface ImageService</code></td></tr>
+        <tr><td class="term-cell">RealSubject</td><td>The real object doing the actual, usually expensive, work.</td><td><code>RemoteImageService</code></td></tr>
+        <tr><td class="term-cell">Client</td><td>The code calling the interface. It never learns whether it got the proxy or the real thing.</td><td><code>openGallery(service)</code></td></tr>
+        <tr><td class="term-cell">Delegation</td><td>Passing a call on to another object instead of doing the work yourself.</td><td><code>return this.real.fetch(name)</code></td></tr>
+        <tr><td class="term-cell">Lazy loading</td><td>Creating or loading something only at the moment it is first needed.</td><td><code>this.real ??= new Real()</code></td></tr>
+        <tr><td class="term-cell">Cache hit / miss</td><td>Hit: the answer was already stored. Miss: it wasn't, so the real call has to happen.</td><td>3 requests, 2 misses, 1 hit.</td></tr>
+        <tr><td class="term-cell">Virtual proxy</td><td>Stands in for an expensive object, creating or loading it lazily.</td><td>Demo 2, exercise 1.</td></tr>
+        <tr><td class="term-cell">Protection proxy</td><td>Checks permissions before letting a call through.</td><td>Demo 3, exercise 2.</td></tr>
+        <tr><td class="term-cell">Remote proxy</td><td>Local stand-in for an object living in another process or on another machine.</td><td>An RPC stub; a VPN.</td></tr>
+        <tr><td class="term-cell">Logging proxy</td><td>Records or times every call without the real class knowing.</td><td>Demo 5.</td></tr>
+        <tr><td class="term-cell">Cross-cutting concern</td><td>Something needed nearly everywhere — logging, timing, auth, retries — that belongs in no single business class.</td><td>Why proxies exist at all.</td></tr>
+        <tr><td class="term-cell">Open/Closed principle</td><td>Open for extension, closed for modification: add behaviour without editing existing code.</td><td>You never touched <code>RemoteImageService</code>.</td></tr>
+        <tr><td class="term-cell">Structural pattern</td><td>A GoF pattern about how objects are composed. Proxy, Decorator, Adapter and Facade are all structural.</td><td>Composition, not creation.</td></tr>
+        <tr><td class="term-cell">Middleware</td><td>A layer sitting between request and handler, doing work around it. The web's everyday proxy.</td><td>Express <code>app.use(...)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== GOTCHA ===================== -->
+<section id="gotcha">
+  <h2><span class="beat">§ — the non-obvious bits</span>Good to know</h2>
+  <div class="grid2">
+    <div class="card kv"><b>if (cached) is a bug</b><p>An empty string, <code>0</code> and <code>false</code>
+      are all falsy — so a correctly cached <code>""</code> counts as a miss and you call the network again,
+      forever. Always compare with <code>!== undefined</code>.</p></div>
+    <div class="card kv"><b>A cache trades freshness for speed</b><p>That trade is not always yours to make.
+      Never cache prices, permissions or stock levels without a rule for when the entry expires.</p></div>
+    <div class="card kv"><b>Proxies hide where the time goes</b><p>The honest cost of the pattern: a stack
+      trace gains a layer, and a slow call can hide behind a cheerful cache. Indirection is never free.</p></div>
+    <div class="card kv"><b>The client never changes</b><p>This is not a side effect — it <em>is</em> the
+      pattern. If you had to edit the client to add the proxy, you did not build a proxy.</p></div>
+    <div class="card kv"><b>Native Proxy is the same idea, one level down</b><p>GoF Proxy is a design you
+      write by hand. JavaScript's <code>Proxy</code> is a language feature that applies it to every property
+      at once — which is exactly how Vue 3 knows your data changed.</p></div>
+    <div class="card kv"><b>You often do not own the real class</b><p>The strongest argument for a proxy over
+      "just edit the service": it may be a third-party SDK, or shared by teams who did not agree to your change.</p></div>
+  </div>
+</section>
+
+<!-- ===================== CHEAT ===================== -->
+<section id="cheat">
+  <h2><span class="beat">§ — carry this home</span>The whole pattern in nine lines</h2>
+  <p>If you remember one snippet from today, this is it. Check the cache, maybe delegate, remember the result.</p>
+<pre class="code"><span class="k">class</span> CachingProxy <span class="k">implements</span> Service {   <span class="c">// 1. same interface as the real thing</span>
+  <span class="k">private</span> cache = <span class="k">new</span> Map();
+  <span class="k">constructor</span>(<span class="k">private</span> real: Service) {}
+
+  ask(key) {
+    <span class="k">const</span> hit = <span class="k">this</span>.cache.get(key);
+    <span class="k">if</span> (hit !== <span class="k">undefined</span>) <span class="k">return</span> hit;      <span class="c">// 2. maybe never call the real one</span>
+    <span class="k">const</span> value = <span class="k">this</span>.real.ask(key);       <span class="c">// 3. otherwise delegate</span>
+    <span class="k">this</span>.cache.set(key, value);             <span class="c">// 4. remember for next time</span>
+    <span class="k">return</span> value;
+  }
+}</pre>
+  <p class="sub">Line 2 is what makes it a proxy and not a decorator.</p>
+</section>
+
+<!-- ===================== RUN ===================== -->
+<section id="run">
+  <h2><span class="beat">§ — after the session</span>Run it on your own machine</h2>
+  <p>Node 22.18 and newer runs TypeScript files directly. There is nothing to install and no build step:</p>
+<pre class="code"><span class="c"># the five demos</span>
+node src/01-problem.ts
+node src/02-virtual-proxy.ts
+node src/03-protection-proxy.ts
+node src/04-logging-proxy.ts
+node src/05-native-js-proxy.ts
+
+<span class="c"># the exercises and their model answers</span>
+node exercise/starter/exercise.ts
+node exercise/solution/solution.ts
+node exercise/starter/exercise2.ts
+node exercise/solution/solution2.ts</pre>
+  <p><code>npm run demo1</code>, <code>npm run exercise</code> and friends do exactly the same thing.
+    The full run sheet, the prep checklist and the slides live in the same repository —
+    see <code>docs/workshop-concept.md</code>.</p>
+  <p class="sub">One difference between this page and the repository: the editors above run plain
+    JavaScript, while the repository files are TypeScript. The logic is identical — TypeScript just
+    adds the type annotations.</p>
+</section>
+
+</main>
+</div>
+
+<footer><div class="wrap">
+  <span>The Proxy Pattern — Barcamp session · Cebrail K. &amp; Tiago D.</span>
+  <span>Works offline. Nothing to install.</span>
+</div></footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- safe storage: file:// can throw outright ---------- */
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* fine */ } }
+  };
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  var saved = store.get("proxy-theme");
+  if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
+  document.getElementById("theme").addEventListener("click", function () {
+    var isDark = root.getAttribute("data-theme") === "dark" ||
+      (!root.hasAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = isDark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    store.set("proxy-theme", next);
+  });
+
+  /* ---------- console output ---------- */
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function paint(line) {
+    var t = esc(line);
+    if (t.indexOf("[NETWORK]") > -1) return '<span class="n">' + t + "</span>";
+    if (t.indexOf("[PROXY") > -1 || t.indexOf("[ACCESS]") > -1 || t.indexOf("[WEATHER]") > -1 ||
+        t.indexOf("[CALC]") > -1 || t.indexOf("[LOG") > -1) return '<span class="p">' + t + "</span>";
+    if (t.indexOf("403") > -1 || t.indexOf("DENIED") > -1) return '<span class="b">' + t + "</span>";
+    if (/SUCCESS|ALLOWED/.test(t)) return '<span class="g">' + t + "</span>";
+    if (/^\s*(---|Page ready|Stats:)/.test(t)) return '<span class="d">' + t + "</span>";
+    return t;
+  }
+  function makeConsole(el) {
+    el.innerHTML = "";
+    return { log: function () {
+      var msg = Array.prototype.map.call(arguments, function (a) {
+        return typeof a === "string" ? a : JSON.stringify(a);
+      }).join(" ");
+      msg.split("\n").forEach(function (line) { el.innerHTML += paint(line) + "\n"; });
+    } };
+  }
+  /* let the browser paint the button state before we block the thread */
+  function yield_() {
+    return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); });
+  }
+
+  /* ---------- the demos, faithful to code/src/*.ts ---------- */
+  var PRELUDE =
+    'function wait(ms){var end=Date.now()+ms;while(Date.now()<end){}}\n';
+
+  var demos = {
+    d1: PRELUDE + [
+      'class RemoteImageService{',
+      '  fetch(f){console.log("   [NETWORK] downloading \\""+f+"\\" ...");wait(400);return "[image data of "+f+"]";}',
+      '}',
+      'var service=new RemoteImageService();',
+      'console.log("Opening the gallery page ...");',
+      'var start=Date.now();',
+      '["cat.png","dog.png","cat.png","parrot.png","dog.png","cat.png"].forEach(function(f){service.fetch(f);});',
+      'console.log("Page ready after "+(Date.now()-start)+" ms");',
+      'console.log("\\nProblems:");',
+      'console.log("  1. cat.png was downloaded 3x           -> wasted bandwidth");',
+      'console.log("  2. everything loads eagerly            -> slow first paint");',
+      'console.log("  3. ANYONE can call fetch()             -> no access control");',
+      'console.log("  4. client is welded to the real class  -> hard to extend");',
+      'console.log("\\nQuestion: can we fix this WITHOUT touching RemoteImageService?");'
+    ].join("\n"),
+
+    d2: PRELUDE + [
+      'class RemoteImageService{',
+      '  fetch(f){console.log("   [NETWORK] downloading \\""+f+"\\" ...");wait(400);return "[image data of "+f+"]";}',
+      '}',
+      'class CachingImageProxy{',
+      '  constructor(){this.cache=new Map();this.real=null;}',
+      '  fetch(f){',
+      '    var hit=this.cache.get(f);',
+      '    if(hit!==undefined){console.log("   [PROXY ] cache hit for \\""+f+"\\"");return hit;}',
+      '    if(!this.real){console.log("   [PROXY ] creating real service (first use)");this.real=new RemoteImageService();}',
+      '    var data=this.real.fetch(f);this.cache.set(f,data);return data;',
+      '  }',
+      '}',
+      'function openGallery(service){',
+      '  var start=Date.now();',
+      '  ["cat.png","dog.png","cat.png","parrot.png","dog.png","cat.png"].forEach(function(f){service.fetch(f);});',
+      '  console.log("Page ready after "+(Date.now()-start)+" ms\\n");',
+      '}',
+      'console.log("--- WITHOUT proxy (demo 1 behaviour) ---");',
+      'openGallery(new RemoteImageService());',
+      'console.log("--- WITH caching proxy ---");',
+      'openGallery(new CachingImageProxy());',
+      'console.log("Same client code. Different object behind the interface.");'
+    ].join("\n"),
+
+    d3: [
+      'class RealDocumentStore{',
+      '  constructor(){this.docs=new Map([["handbook","Public employee handbook ..."],["salaries","CONFIDENTIAL salary list ..."]]);}',
+      '  read(id){var d=this.docs.get(id);return d===undefined?"(not found)":d;}',
+      '  delete(id,user){this.docs.delete(id);console.log("   [STORE ] \\""+id+"\\" deleted by "+user.name);}',
+      '}',
+      'class ProtectionProxy{',
+      '  constructor(real){this.real=real;}',
+      '  read(id,user){',
+      '    if(user.role==="guest"&&id==="salaries"){console.log("   [PROXY ] 403 - "+user.name+" may not read \\""+id+"\\"");return "403 Forbidden";}',
+      '    return this.real.read(id,user);',
+      '  }',
+      '  delete(id,user){',
+      '    if(user.role!=="admin"){console.log("   [PROXY ] 403 - only admins may delete ("+user.name+" is "+user.role+")");return;}',
+      '    this.real.delete(id,user);',
+      '  }',
+      '}',
+      'var proxy=new ProtectionProxy(new RealDocumentStore());',
+      'var users=[{name:"Alice",role:"guest"},{name:"Bob",role:"editor"},{name:"Root",role:"admin"}];',
+      'users.forEach(function(u){',
+      '  console.log("\\n"+u.name+" ("+u.role+") tries to read \\"salaries\\":");',
+      '  console.log("   -> "+proxy.read("salaries",u));',
+      '});',
+      'console.log("\\nBob (editor) tries to delete \\"handbook\\":");',
+      'proxy.delete("handbook",users[1]);',
+      'console.log("Root (admin) deletes \\"handbook\\":");',
+      'proxy.delete("handbook",users[2]);',
+      'console.log("\\nThe real store never saw a single unauthorized call.");'
+    ].join("\n"),
+
+    d5: [
+      'class OpenWeatherService{',
+      '  getTemperature(city){return city==="Hamburg"?18:25;}',
+      '  getForecast(city){return [city+": sunny",city+": cloudy",city+": rainy"];}',
+      '}',
+      'function withLogging(target,label){',
+      '  return new Proxy(target,{',
+      '    get:function(obj,prop){',
+      '      var original=obj[prop];',
+      '      if(typeof original!=="function")return original;',
+      '      return function(){',
+      '        var args=Array.prototype.slice.call(arguments);',
+      '        var start=performance.now();',
+      '        var result=original.apply(obj,args);',
+      '        console.log("   ["+label+"] "+String(prop)+"("+args.join(", ")+") -> "+JSON.stringify(result)+" ("+(performance.now()-start).toFixed(1)+" ms)");',
+      '        return result;',
+      '      };',
+      '    }',
+      '  });',
+      '}',
+      'var api=withLogging(new OpenWeatherService(),"WEATHER");',
+      'console.log("Same service, zero changes, full logging:\\n");',
+      'api.getTemperature("Hamburg");',
+      'api.getForecast("Berlin");',
+      'console.log("\\nWorks for ANY object - here a plain calculator:");',
+      'var calc=withLogging({add:function(a,b){return a+b;}},"CALC");',
+      'calc.add(2,3);',
+      'console.log("\\nThis exact trick powers Vue 3 reactivity and MobX.");'
+    ].join("\n")
+  };
+
+  var notes = {
+    d1: "6 requests, 3 pictures, 400 ms each.",
+    d2: "Watch the second number.",
+    d3: "Nobody unauthorised gets through.",
+    d5: "One handler, every method."
+  };
+
+  Object.keys(notes).forEach(function (id) {
+    var n = document.querySelector('[data-note="' + id + '"]');
+    if (n) n.textContent = notes[id];
+  });
+
+  document.querySelectorAll("[data-demo]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-demo");
+      var out = document.getElementById("out-" + id);
+      var label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Running — the tab will freeze, that is the point";
+      yield_().then(function () {
+        var c = makeConsole(out);
+        try { new Function("console", demos[id])(c); }
+        catch (err) { out.innerHTML += '<span class="b">' + esc(String(err)) + "</span>\n"; }
+        btn.disabled = false;
+        btn.textContent = label;
+      });
+    });
+  });
+
+  /* ---------- exercises ---------- */
+  var ex = {
+    ex1: {
+      prelude: PRELUDE + [
+        'class SlowRemoteQuoteService{',
+        '  constructor(){this.calls=0;}',
+        '  getQuote(topic){',
+        '    this.calls++;',
+        '    console.log("   [NETWORK] searching quotes about \\""+topic+"\\" ...");',
+        '    wait(600);',
+        '    var q={design:"Simplicity is the ultimate sophistication.",code:"Talk is cheap. Show me the code.",life:"The best way to predict the future is to invent it."};',
+        '    return q[topic]!==undefined?q[topic]:"\\""+topic+"\\"? Stay curious!";',
+        '  }',
+        '}'
+      ].join("\n"),
+      harness: [
+        'var remote=new SlowRemoteQuoteService();',
+        'var service=new CachingQuoteProxy(remote);',
+        'console.log("User opens the app three times:\\n");',
+        'var t=Date.now();var first=service.getQuote("design");var firstMs=Date.now()-t;',
+        'console.log("1st: "+first);console.log("    took "+firstMs+" ms\\n");',
+        't=Date.now();var second=service.getQuote("code");var secondMs=Date.now()-t;',
+        'console.log("2nd: "+second);console.log("    took "+secondMs+" ms\\n");',
+        't=Date.now();var third=service.getQuote("design");var thirdMs=Date.now()-t;',
+        'console.log("3rd: "+third+"  <-- same topic again!");console.log("    took "+thirdMs+" ms\\n");',
+        'if(typeof service.stats==="function")console.log("Stats: "+JSON.stringify(service.stats()));',
+        'return [',
+        '  [first==="Simplicity is the ultimate sophistication.", \'the 1st call must return the real quote about "design"\'],',
+        '  [second==="Talk is cheap. Show me the code.", \'the 2nd call must return the real quote about "code"\'],',
+        '  [third===first, "the 3rd call must return the same answer as the 1st"],',
+        '  [remote.calls===2, "the real service was called "+remote.calls+"x - it must be exactly 2 (design, code)"],',
+        '  [thirdMs<150, "the 3rd call took "+thirdMs+" ms - a cache hit must be instant"]',
+        '];'
+      ].join("\n"),
+      starter: [
+        'class CachingQuoteProxy {',
+        '  constructor(real) {',
+        '    this.real = real;',
+        '    // TODO 1: add a cache (a Map fits nicely)',
+        '  }',
+        '',
+        '  getQuote(topic) {',
+        '    // TODO 2: is this topic already cached? then return it immediately',
+        '    //         (and maybe log "   [PROXY ] cache hit for ...")',
+        '',
+        '    // TODO 3: otherwise ask the real service, store the answer, return it',
+        '',
+        '    return ""; // <- replace this line',
+        '  }',
+        '',
+        '  // TODO 4 (bonus): stats() returning { hits, misses }',
+        '}'
+      ].join("\n"),
+      solution: [
+        'class CachingQuoteProxy {',
+        '  constructor(real) {',
+        '    this.real = real;',
+        '    this.cache = new Map();',
+        '    this.hits = 0;',
+        '    this.misses = 0;',
+        '  }',
+        '',
+        '  getQuote(topic) {',
+        '    const cached = this.cache.get(topic);',
+        '    if (cached !== undefined) {          // NOT if (cached) !',
+        '      this.hits++;',
+        '      console.log(`   [PROXY ] cache hit for "${topic}"`);',
+        '      return cached;',
+        '    }',
+        '    this.misses++;',
+        '    const fresh = this.real.getQuote(topic);  // delegate',
+        '    this.cache.set(topic, fresh);             // remember',
+        '    return fresh;',
+        '  }',
+        '',
+        '  stats() {',
+        '    return { hits: this.hits, misses: this.misses };',
+        '  }',
+        '}'
+      ].join("\n"),
+      hints: [
+        "Look at demo 2 above — you are building almost the same thing.",
+        "A Map stores one value per topic: cache.set(key, value), and cache.get(key) returns undefined when it is not there.",
+        "The method has three jobs, in this order: check the cache → maybe delegate → remember the result.",
+        "For the bonus: increase hits on a cache hit, and misses just before you delegate."
+      ]
+    },
+
+    ex2: {
+      prelude: [
+        'class RealDocumentService{',
+        '  constructor(){this.documents={"contract.pdf":"Content: contract details ...","secret.pdf":"Content: strictly confidential ..."};}',
+        '  readDocument(name){var d=this.documents[name];return d===undefined?"document not found":d;}',
+        '  deleteDocument(name){delete this.documents[name];return "\\""+name+"\\" was deleted.";}',
+        '}'
+      ].join("\n"),
+      harness: [
+        'var store=new RealDocumentService();',
+        'var asGuest=new ProtectedDocumentProxy(store,"guest");',
+        'var asAdmin=new ProtectedDocumentProxy(store,"admin");',
+        'console.log("Guest tries to read and to delete:");',
+        'console.log("   read  -> "+asGuest.readDocument("contract.pdf"));',
+        'var guestDelete=asGuest.deleteDocument("contract.pdf");',
+        'console.log("   delete-> "+guestDelete);',
+        'console.log("\\nAdmin tries to read and to delete:");',
+        'console.log("   read  -> "+asAdmin.readDocument("secret.pdf"));',
+        'console.log("   delete-> "+asAdmin.deleteDocument("secret.pdf"));',
+        'return [',
+        '  [String(asGuest.readDocument("contract.pdf")).indexOf("contract details")>-1, "a guest must still be able to READ contract.pdf"],',
+        '  [String(guestDelete).toLowerCase().indexOf("denied")>-1, \'a denied delete must return a message containing "denied"\'],',
+        '  [String(store.readDocument("contract.pdf")).indexOf("contract details")>-1, "contract.pdf must STILL EXIST - the guest delete must never reach the real store"],',
+        '  [String(store.readDocument("secret.pdf")).indexOf("confidential")===-1, "the admin delete must actually go through to the real store"]',
+        '];'
+      ].join("\n"),
+      starter: [
+        'class ProtectedDocumentProxy {',
+        '  constructor(real, role) {',
+        '    this.real = real;',
+        '    this.role = role;   // "admin" or "guest"',
+        '    // TODO 1 (bonus): an array for the access log',
+        '  }',
+        '',
+        '  readDocument(name) {',
+        '    // TODO 2: reading is always allowed -> just pass it through',
+        '    return "";',
+        '  }',
+        '',
+        '  deleteDocument(name) {',
+        '    // TODO 3: only delete when this.role === "admin"',
+        '    // TODO 4: otherwise return a message containing the word "denied"',
+        '    return "";',
+        '  }',
+        '',
+        '  // TODO 5 (bonus): getAccessLog()',
+        '}'
+      ].join("\n"),
+      solution: [
+        'class ProtectedDocumentProxy {',
+        '  constructor(real, role) {',
+        '    this.real = real;',
+        '    this.role = role;',
+        '    this.accessLog = [];',
+        '  }',
+        '',
+        '  readDocument(name) {',
+        '    this.log("read", name, true);',
+        '    return this.real.readDocument(name);   // always allowed',
+        '  }',
+        '',
+        '  deleteDocument(name) {',
+        '    if (this.role !== "admin") {',
+        '      this.log("delete", name, false);',
+        '      return `Access denied: role "${this.role}" may not delete "${name}".`;',
+        '    }',
+        '    this.log("delete", name, true);',
+        '    return this.real.deleteDocument(name);  // authorised -> delegate',
+        '  }',
+        '',
+        '  getAccessLog() {',
+        '    return [...this.accessLog];',
+        '  }',
+        '',
+        '  log(action, name, allowed) {',
+        '    const entry = `[${allowed ? "ALLOWED" : "DENIED "}] role "${this.role}" -> ${action}("${name}")`;',
+        '    console.log("   [ACCESS] " + entry);',
+        '    this.accessLog.push(entry);',
+        '  }',
+        '}'
+      ].join("\n"),
+      hints: [
+        "readDocument is the easy one: return this.real.readDocument(name) and nothing else.",
+        "deleteDocument needs an if. Check this.role first, and return early when it is not \"admin\".",
+        "The denied message must contain the word \"denied\" — that is what the check looks for. And notice: on that path you never touch this.real at all. That is exactly what makes this a proxy.",
+        "For the bonus: push a string into this.accessLog on every attempt, allowed or not."
+      ]
+    }
+  };
+
+  function editor(id) { return document.querySelector('[data-ex="' + id + '"]'); }
+
+  function execute(id, mode) {
+    var out = document.getElementById("out-" + id);
+    var v = document.getElementById("v-" + id);
+    var cfg = ex[id];
+    var c = makeConsole(out);
+    v.className = "verdict";
+    var results;
+    try {
+      results = new Function("console", cfg.prelude + "\n" + editor(id).value + "\n" + cfg.harness)(c);
+    } catch (err) {
+      out.innerHTML += '<span class="b">' + esc(String(err)) + "</span>\n";
+      v.className = "verdict show fail";
+      v.innerHTML = "<b>The code could not run.</b>Read the red line above — it names the file position and what JavaScript did not understand.";
+      return;
+    }
+    if (mode !== "check") return;
+
+    var failed = results.filter(function (r) { return !r[0]; });
+    if (failed.length === 0) {
+      v.className = "verdict show pass";
+      v.innerHTML = "<b>SUCCESS — it works!</b>Every condition passed. Now try the bonus, or move on to exercise 2.";
+      store.set("proxy-done-" + id, "1");
+      markDone();
+    } else {
+      v.className = "verdict show fail";
+      v.innerHTML = "<b>Not yet — " + failed.length + " of " + results.length + " conditions still fail:</b><ul>" +
+        failed.map(function (r) { return "<li>" + esc(r[1]) + "</li>"; }).join("") + "</ul>";
+    }
+  }
+
+  function markDone() {
+    ["ex1", "ex2"].forEach(function (id) {
+      var tag = document.querySelector('[data-done="' + id + '"]');
+      if (tag) tag.textContent = store.get("proxy-done-" + id) === "1" ? "✓ solved" : "";
+    });
+  }
+
+  Object.keys(ex).forEach(function (id) {
+    var cfg = ex[id];
+    var ta = editor(id);
+    ta.value = store.get("proxy-code-" + id) || cfg.starter;
+    ta.addEventListener("input", function () { store.set("proxy-code-" + id, ta.value); });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+      var s = ta.selectionStart, en = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + "  " + ta.value.slice(en);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    });
+
+    document.getElementById("sol-" + id).textContent = cfg.solution;
+
+    var hintBox = document.getElementById("h-" + id);
+    var shown = 0;
+    var hintBtn = document.querySelector('[data-hint="' + id + '"]');
+    hintBtn.addEventListener("click", function () {
+      if (shown >= cfg.hints.length) return;
+      var d = document.createElement("div");
+      d.className = "hint";
+      d.innerHTML = '<span class="n">' + (shown + 1) + "</span><span>" + esc(cfg.hints[shown]) + "</span>";
+      hintBox.appendChild(d);
+      shown++;
+      hintBtn.textContent = shown >= cfg.hints.length ? "No more hints" : "Show another hint (" + (cfg.hints.length - shown) + " left)";
+      if (shown >= cfg.hints.length) hintBtn.disabled = true;
+    });
+
+    document.querySelector('[data-reset="' + id + '"]').addEventListener("click", function () {
+      ta.value = cfg.starter;
+      store.set("proxy-code-" + id, cfg.starter);
+      document.getElementById("out-" + id).innerHTML = "";
+      document.getElementById("v-" + id).className = "verdict";
+    });
+
+    ["run", "check"].forEach(function (mode) {
+      var btn = document.querySelector("[data-" + mode + '="' + id + '"]');
+      btn.addEventListener("click", function () {
+        var label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Running…";
+        yield_().then(function () {
+          execute(id, mode);
+          btn.disabled = false;
+          btn.textContent = label;
+        });
+      });
+    });
+  });
+  markDone();
+
+  /* ---------- rail highlighting ---------- */
+  var links = {};
+  document.querySelectorAll("nav.rail a").forEach(function (a) { links[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        var a = links[e.target.id];
+        if (!a) return;
+        if (e.isIntersecting) {
+          Object.keys(links).forEach(function (k) { links[k].classList.remove("on"); });
+          a.classList.add("on");
+        }
+      });
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    document.querySelectorAll("main section").forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

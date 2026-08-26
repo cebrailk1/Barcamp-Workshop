@@ -22,24 +22,24 @@ Cebrail K. & Tiago D. · 60 minutes
 
 ## Agenda
 
-- 0–5: Welcome, short warm-up
-- 5–15: The problem, what is a Proxy, UML
-- 15–30: Live coding: caching and protection proxies
-- 30–45: Hands-on in pairs: build your own proxy
-- 45–55: Model answer, Proxy vs. similar patterns
-- 55–60: Wrap-up and feedback
+- 0–9: Welcome, warm-up, and the problem
+- 9–22: What is a Proxy, UML, live coding the caching proxy
+- 22–31: Protection proxy, pattern comparison, and one wow moment
+- 31–46: Hands-on in pairs: build your own proxy
+- 46–52: Model answer
+- 52–60: Big picture, wrap-up and feedback
 
 ---
 
 ## Warm-up
 
-Raise your hand if you have used ...
+Raise your hand if you have ...
 
-- a VPN
-- a credit card
-- a bouncer in front of a club
+- picked up a parcel from a Paketshop instead of your front door
+- had a class rep speak for the whole class
+- used a VPN
 
-All three stand in front of something else and control access to it.
+Each one stands in front of something else and controls access to it.
 A Proxy does the same for objects.
 
 ---
@@ -52,11 +52,12 @@ A gallery app talks directly to a remote image service:
 service.fetch("cat.png");   // 400 ms network call
 service.fetch("dog.png");
 service.fetch("cat.png");   // same file, downloaded again
+// ... 6 requests, only 3 different pictures -> 2400 ms
 ```
 
 What we saw in the demo:
 
-- the same file gets downloaded twice
+- the same file gets downloaded three times
 - everything loads eagerly, first paint is slow
 - anyone can call anything, there is no access control
 - the client is hard-wired to one concrete class
@@ -80,8 +81,8 @@ Demo: `npm run demo1`
 
 ## Analogies
 
+- Paketshop: holds the parcel until you actually come for it (virtual/lazy)
 - Bouncer: controls who gets in (protection)
-- Credit card: money you do not carry with you (virtual)
 - VPN: your request takes a different route (remote)
 - Notary: records every signature (logging)
 
@@ -108,7 +109,7 @@ class CachingImageProxy implements ImageService {
 
   fetch(name: string): string {
     const hit = this.cache.get(name);
-    if (hit) return hit;                      // cache first
+    if (hit !== undefined) return hit;        // cache first (not `if (hit)`!)
     this.real ??= new RemoteImageService();   // create on first use
     const data = this.real.fetch(name);       // delegate
     this.cache.set(name, data);               // remember
@@ -117,7 +118,7 @@ class CachingImageProxy implements ImageService {
 }
 ```
 
-Demo: `npm run demo2`
+Demo: `npm run demo2` -> 2400 ms becomes 1200 ms, same client code
 
 ---
 
@@ -140,6 +141,21 @@ Demo: `npm run demo3`
 
 ---
 
+## Proxy vs. similar patterns
+
+| Pattern | Question it answers |
+|---|---|
+| Proxy | same interface, controls access |
+| Decorator | same interface, adds behaviour |
+| Adapter | different interface, makes things compatible |
+| Facade | one simple front door for a whole subsystem |
+
+Common exam question: Proxy vs. Decorator. Both wrap with the same
+interface, but the proxy manages access (lazy, cached, guarded)
+while the decorator enriches behaviour.
+
+---
+
 ## Logging and timing
 
 Logging, metrics, tracing: useful for us, but they do not belong inside
@@ -154,7 +170,8 @@ getTemperature(city: string): number {
 }
 ```
 
-Demo: `npm run demo4`
+No demo for this one - you can already see the problem:
+we just wrote the **same wrapper** for every single method.
 
 ---
 
@@ -186,27 +203,15 @@ Mission: make the slow quote app fast.
 3. The client code at the bottom stays untouched
 
 ```bash
-npm run exercise            # your attempt
-npm run exercise:solution   # model answer
+node exercise/starter/exercise.ts     # your attempt
+node exercise/solution/solution.ts    # model answer
 ```
 
-You are done when it prints `SUCCESS - cache works!`
-Hints: `code/exercise/README.md`
+Nothing to install. No Node? Open `workshop.html` in your browser.
 
----
-
-## Proxy vs. similar patterns
-
-| Pattern | Question it answers |
-|---|---|
-| Proxy | same interface, controls access |
-| Decorator | same interface, adds behaviour |
-| Adapter | different interface, makes things compatible |
-| Facade | one simple front door for a whole subsystem |
-
-Common exam question: Proxy vs. Decorator. Both wrap with the same
-interface, but the proxy manages access (lazy, cached, guarded)
-while the decorator enriches behaviour.
+Done when it prints `SUCCESS - cache works!` - if not, it tells you which
+condition failed. Hints: `code/exercise/README.md`
+Finished early? `exercise2.ts` - the protection proxy.
 
 ---
 
