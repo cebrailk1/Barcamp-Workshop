@@ -3,9 +3,14 @@
 Work in pairs. One laptop per pair is enough - talk while you type.
 Swap driver and navigator after 7 minutes.
 
-## No setup needed
+## Where to work
 
-Node 22.18+ runs TypeScript directly. There is **nothing to install**:
+**In the session we use `workshop.html`** - double-click it in the repository
+root. The same exercise is in there, with a Run button, a Check button, the hint
+ladder and the model answer. Nothing to install.
+
+These files are the same exercise as TypeScript, for your own editor or for
+after the session. Node 22.18+ runs them directly - still nothing to install:
 
 ```bash
 node exercise/starter/exercise.ts      # run YOUR version
@@ -13,8 +18,6 @@ node exercise/solution/solution.ts     # compare with the model answer
 ```
 
 `npm run exercise` / `npm run exercise:solution` do the same thing.
-No Node at all? Open `workshop.html` from the repo root in your browser -
-the same exercise runs there, with a Run button.
 
 ## Your mission
 

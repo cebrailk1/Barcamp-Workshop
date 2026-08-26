@@ -7,6 +7,24 @@ Design Thinking & Entrepreneurship workshop.
 Everything you need lives in this repository: concept, slides,
 runnable demos and two hands-on exercises with model answers.
 
+## Start here → `workshop.html`
+
+**Double-click [`workshop.html`](workshop.html).** That is the whole setup.
+
+It opens in any browser, works **completely offline**, and is what we use in the
+session. It contains:
+
+- the red thread of the talk and the full glossary
+- all demos with a **Run** button — real output, no terminal
+- both exercises with **Run**, **Check**, a step-by-step hint ladder and the
+  model answer
+- the Proxy vs. Decorator vs. Adapter vs. Facade comparison and a cheat sheet
+
+No install, no Node, no npm, no internet, no server. Your work is saved in your
+browser, so you can close the tab and come back to it.
+
+> **Participants:** this one file is all you need. Everything below is optional.
+
 ## What is the Proxy pattern?
 
 > A proxy is an object with the **same interface** as a real service.
@@ -27,67 +45,68 @@ runnable demos and two hands-on exercises with model answers.
 (open/closed principle — behaviour added without touching existing code).
 **Drawbacks:** extra indirection, more classes, can hide latency.
 
-## Quick start
+## Optional: run the TypeScript source
 
-**Requirement: Node.js ≥ 22.18** (<https://nodejs.org>) — that's it.
-Node runs the TypeScript files directly, so there is **no `npm install`,
-no build step and nothing to download on the day.**
+The same demos and exercises also exist as real TypeScript files in `code/`.
+Useful if you want them in your own editor, or after the session.
 
-```bash
-cd Barcamp-Workshop/code
-
-npm run demo1     # the problem: direct calls to an expensive service
-npm run demo2     # virtual/caching proxy
-npm run demo3     # protection proxy (roles)
-npm run demo4     # logging/timing proxy
-npm run demo5     # bonus: native JavaScript Proxy object
-
-npm run exercise             # hands-on 1: caching proxy (your turn!)
-npm run exercise:solution    # model answer
-npm run exercise2            # hands-on 2: protection proxy (fast finishers)
-npm run exercise:solution2   # model answer
-```
-
-Every script is just `node <file>` — you can also run the files directly:
+**Requirement: Node.js ≥ 22.18** (<https://nodejs.org>) — that's it. Node runs
+the TypeScript files directly, so there is still **no `npm install` and no build
+step**.
 
 ```bash
-node src/01-problem.ts
+cd code
+
+node src/01-problem.ts          # the problem: direct calls to an expensive service
+node src/02-virtual-proxy.ts    # virtual/caching proxy
+node src/03-protection-proxy.ts # protection proxy (roles)
+node src/04-logging-proxy.ts    # logging/timing proxy
+node src/05-native-js-proxy.ts  # bonus: native JavaScript Proxy object
+
+node exercise/starter/exercise.ts     # hands-on 1: caching proxy
+node exercise/solution/solution.ts    # model answer
+node exercise/starter/exercise2.ts    # hands-on 2: protection proxy
+node exercise/solution/solution2.ts   # model answer
 ```
 
-### No Node? No problem.
+`npm run demo1`, `npm run exercise`, `npm run exercise2` and friends do exactly
+the same thing — every script is just `node <file>`.
 
-Double-click **`workshop.html`** in the repository root. It opens in any
-browser, works completely offline, and contains the glossary, the runnable
-demos and both exercises with Run and Check buttons. Nothing to install,
-nothing to deploy.
+The one difference from `workshop.html`: the in-browser editors run plain
+JavaScript, while these files are TypeScript. The logic is identical; TypeScript
+only adds the type annotations.
 
 ## Repository structure
 
 ```
 Barcamp-Workshop/
 ├── README.md                  <- you are here
-├── workshop.html              offline handout + interactive exercises
+├── workshop.html              THE workshop: handout + interactive exercises
 ├── docs/
 │   └── workshop-concept.md    learning goals, 60-min run sheet, prep checklist
 ├── slides/
 │   ├── proxy-pattern.md       Marp slide deck (English)
-│   └── proxy-pattern.pdf      exported deck (offline backup)
+│   └── proxy-pattern.pdf      exported deck — present from this
 ├── assets/
 │   └── uml-proxy.svg          UML class diagram
 └── code/
-    ├── src/                   five runnable demos
+    ├── src/                   five runnable demos (TypeScript)
     └── exercise/              two hands-on tasks: starters + model answers
 ```
 
-## Slides
+## Presenting
 
-The deck is written in [Marp](https://marp.app/) Markdown. Render to PDF:
+Open `slides/proxy-pattern.pdf` and go fullscreen (**Ctrl+L** or **F5** in most
+PDF viewers). Nothing else to start.
+
+To re-export the deck after editing the Markdown:
 
 ```bash
 npx @marp-team/marp-cli slides/proxy-pattern.md --pdf --allow-local-files
 ```
 
-`--allow-local-files` is **required** — without it the UML slide exports blank.
+Keep `--allow-local-files` — the UML slide is a local SVG, and this is the flag
+that lets Marp read it.
 
 ## Session agenda
 
