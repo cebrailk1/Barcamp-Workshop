@@ -28,7 +28,7 @@ After the session, participants can …
 
 | Time  | Phase                | Trainer activity                                                            | Participant activity                        |
 | ----- | -------------------- | --------------------------------------------------------------------------- | ------------------------------------------- |
-| 0–4   | Welcome & warm-up    | Introduce yourselves, poll: "Who has picked up a parcel from a Paketshop?"  | Vote by raising hands                       |
+| 0–4   | Welcome & warm-up    | Introduce yourselves, poll: "Who used a VPN / credit card / bouncer?"             | Vote by raising hands                       |
 | 4–9   | The problem          | Live demo `demo1`, collect pain points on the whiteboard                    | Call out problems they notice               |
 | 9–15  | What is a Proxy?     | Definition + analogies, present UML (`assets/uml-proxy.svg`)                | Map the analogies onto the UML roles        |
 | 15–22 | Live coding I        | Walk through `demo2` (caching/virtual proxy)                                | Predict the output before each run          |

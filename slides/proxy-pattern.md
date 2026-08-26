@@ -33,13 +33,13 @@ Cebrail K. & Tiago D. · 60 minutes
 
 ## Warm-up
 
-Raise your hand if you have ...
+Raise your hand if you have used ...
 
-- picked up a parcel from a Paketshop instead of your front door
-- had a class rep speak for the whole class
-- used a VPN
+- a VPN
+- a credit card
+- a bouncer in front of a club
 
-Each one stands in front of something else and controls access to it.
+All three stand in front of something else and control access to it.
 A Proxy does the same for objects.
 
 ---
@@ -81,8 +81,8 @@ What we find:
 
 ## Analogies
 
-- Paketshop: holds the parcel until you actually come for it (virtual/lazy)
 - Bouncer: controls who gets in (protection)
+- Credit card: money you do not carry with you (virtual)
 - VPN: your request takes a different route (remote)
 - Notary: records every signature (logging)
 
