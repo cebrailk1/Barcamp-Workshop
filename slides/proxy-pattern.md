@@ -55,14 +55,14 @@ service.fetch("cat.png");   // same file, downloaded again
 // ... 6 requests, only 3 different pictures -> 2400 ms
 ```
 
-What we saw in the demo:
+Demo: `npm run demo1` - watch the clock, then tell me what is wrong.
+
+What we find:
 
 - the same file gets downloaded three times
 - everything loads eagerly, first paint is slow
 - anyone can call anything, there is no access control
 - the client is hard-wired to one concrete class
-
-Demo: `npm run demo1`
 
 ---
 
@@ -90,9 +90,9 @@ Always the same idea: stand in front, add control, keep the interface.
 
 ---
 
-## UML
+## One interface, two implementations
 
-![w:880](../assets/uml-proxy.svg)
+![w:900](../assets/uml-proxy.svg)
 
 ---
 
@@ -143,16 +143,17 @@ Demo: `npm run demo3`
 
 ## Proxy vs. similar patterns
 
-| Pattern | Question it answers |
-|---|---|
-| Proxy | same interface, controls access |
-| Decorator | same interface, adds behaviour |
-| Adapter | different interface, makes things compatible |
-| Facade | one simple front door for a whole subsystem |
+| Pattern | Interface | The question it answers |
+|---|---|---|
+| **Proxy** | same | May this call happen, and when? |
+| Decorator | same | What else should happen around it? |
+| Adapter | different | How do I make these two fit together? |
+| Facade | new, simpler | How do I front a whole subsystem? |
 
-Common exam question: Proxy vs. Decorator. Both wrap with the same
-interface, but the proxy manages access (lazy, cached, guarded)
-while the decorator enriches behaviour.
+**The sharpest test:** a decorator *always* delegates. A proxy may decide
+**never to call the real object at all** - cache hit, denied permission,
+object not created yet. If your wrapper can return without touching the
+real thing, it is a proxy.
 
 ---
 
@@ -195,23 +196,17 @@ Demo: `npm run demo5`
 
 ## Hands-on (15 min, in pairs)
 
-Mission: make the slow quote app fast.
+**Mission: make the slow quote app fast.**
 
-1. Open `code/exercise/starter/exercise.ts`
-2. Implement `CachingQuoteProxy`: every topic gets fetched once,
+Open `workshop.html` → scroll to **Your turn**
+
+1. Implement `CachingQuoteProxy`: fetch every topic **once**,
    repeated requests come from your cache
-3. The client code at the bottom stays untouched
+2. The client code stays untouched
+3. Press **Check** - it names exactly what still fails
 
-```bash
-node exercise/starter/exercise.ts     # your attempt
-node exercise/solution/solution.ts    # model answer
-```
-
-Nothing to install. No Node? Open `workshop.html` in your browser.
-
-Done when it prints `SUCCESS - cache works!` - if not, it tells you which
-condition failed. Hints: `code/exercise/README.md`
-Finished early? `exercise2.ts` - the protection proxy.
+Stuck? **Show a hint** - four of them, one at a time.
+Finished early? Exercise 2 is right below it.
 
 ---
 

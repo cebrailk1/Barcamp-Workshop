@@ -220,6 +220,95 @@ td code{font-size:13px}
 footer{border-top:1px solid var(--line);background:var(--surface);padding:26px 0;font-size:14px;color:var(--muted)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
 
+/* ---------- the race: two galleries loading side by side ---------- */
+.race{display:grid;gap:14px;margin:0 0 14px}
+.lane{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:var(--surface-2);position:relative;overflow:hidden}
+.lane[data-state="win"]{border-color:var(--ok)}
+.lane-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:11px}
+.lane-name{font-weight:700;font-size:15px}
+.lane-name .tag{font-size:11px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--muted);margin-left:8px;text-transform:uppercase}
+.lane-clock{font-family:ui-monospace,Menlo,monospace;font-size:15px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.lane[data-state="win"] .lane-clock{color:var(--ok);font-weight:700}
+.slots{display:flex;gap:8px;flex-wrap:wrap}
+.slot{
+  width:62px;height:52px;border-radius:9px;border:1.5px dashed var(--line);
+  display:grid;place-items:center;position:relative;
+  background:var(--surface);transition:transform .18s ease,border-color .18s ease,background .18s ease;
+  opacity:.4;
+}
+.slot .pic{
+  font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:600;
+  color:hsl(var(--hue) 65% 38%);letter-spacing:.02em;
+}
+:root[data-theme="dark"] .slot .pic{color:hsl(var(--hue) 70% 68%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .slot .pic{color:hsl(var(--hue) 70% 68%)}}
+.slot .badge{
+  position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);
+  font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.04em;
+  padding:1px 5px;border-radius:20px;white-space:nowrap;opacity:0;transition:opacity .2s ease;
+}
+.slot[data-s="loading"]{border-style:solid;border-color:var(--net);opacity:1;animation:pulse .9s ease-in-out infinite}
+.slot[data-s="net"]{border-style:solid;border-color:var(--net);background:var(--net-soft);opacity:1;transform:scale(1.06)}
+.slot[data-s="net"] .badge{opacity:1;background:var(--net-soft);color:var(--net);border:1px solid var(--net)}
+.slot[data-s="hit"]{border-style:solid;border-color:var(--proxy);background:var(--proxy-soft);opacity:1;transform:scale(1.06)}
+.slot[data-s="hit"] .badge{opacity:1;background:var(--proxy-soft);color:var(--proxy);border:1px solid var(--proxy)}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.race-verdict{
+  border-radius:10px;padding:13px 16px;font-size:15px;background:var(--ok-soft);
+  border:1px solid var(--ok);color:var(--ink);display:none
+}
+.race-verdict.show{display:block;animation:rise .45s cubic-bezier(.2,.9,.3,1)}
+.race-verdict b{color:var(--ok)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- live call flow ---------- */
+.flow{position:relative;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:20px 16px;margin:0 0 14px}
+.flow-row{display:flex;align-items:stretch;justify-content:space-between;gap:10px}
+.node{
+  flex:1;min-width:0;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);
+  padding:12px 13px;text-align:center;transition:border-color .2s ease,background .2s ease,box-shadow .2s ease
+}
+.node h4{margin:0 0 3px;font-size:13.5px;font-family:ui-monospace,Menlo,monospace}
+.node .role{font-size:11px;color:var(--muted);display:block}
+.node[data-lit="proxy"]{border-color:var(--proxy);background:var(--proxy-soft);box-shadow:0 0 0 3px var(--proxy-soft)}
+.node[data-lit="net"]{border-color:var(--net);background:var(--net-soft);box-shadow:0 0 0 3px var(--net-soft)}
+.node-cache{display:flex;gap:5px;justify-content:center;margin-top:9px;min-height:26px}
+.cslot{
+  min-width:40px;height:24px;padding:0 6px;border-radius:6px;border:1.5px dashed var(--line);
+  display:grid;place-items:center;opacity:.4;
+  font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:600
+}
+.cslot.full{border-style:solid;border-color:var(--proxy);background:var(--proxy-soft);opacity:1;animation:pop .32s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+.wire{align-self:center;color:var(--line);font-size:19px;flex:0 0 auto}
+.packet{
+  position:absolute;top:0;left:0;height:24px;   /* origin = container, so translate() is absolute */
+  padding:0 9px;border-radius:20px;display:grid;place-items:center;
+  font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;white-space:nowrap;
+  background:var(--net);color:#fff;pointer-events:none;opacity:0;z-index:3;
+  box-shadow:0 2px 12px rgba(0,0,0,.3)
+}
+.packet.on{opacity:1}
+.packet.hit{background:var(--proxy)}
+.flow-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.flow-controls .count{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.flow-controls .count b{color:var(--net)}
+.flow-log{
+  font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.7;
+  min-height:44px;color:var(--muted);margin:0
+}
+.flow-log .hit{color:var(--proxy);font-weight:600}
+.flow-log .miss{color:var(--net);font-weight:600}
+
+/* ---------- native Proxy spy ---------- */
+.spy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width:620px){.spy-grid{grid-template-columns:1fr}}
+.spy-keys{display:flex;flex-wrap:wrap;gap:7px}
+.spy-keys button{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;padding:6px 11px}
+@media (prefers-reduced-motion:reduce){
+  .slot,.cslot,.race-verdict,.packet{animation:none!important;transition:none!important}
+}
+
 @media print{
   body{background:#fff;font-size:11pt}
   nav.rail,.tools,.btnrow,textarea.editor,.term{display:none}
@@ -309,6 +398,37 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
     </div>
   </div>
 
+
+  <div class="demo" style="margin-top:18px">
+    <div class="demo-head"><h3>The race</h3><span class="file">same gallery, both lanes, live</span></div>
+    <div class="demo-body">
+      <p>Six thumbnails, three different pictures. The top lane calls the service directly.
+        The bottom lane goes through a caching proxy. <strong>Same code, same pictures</strong> —
+        press start and watch the clocks.</p>
+      <div class="btnrow">
+        <button class="primary" id="race-go" type="button">Start the race</button>
+        <span class="sub" id="race-note">Nothing is faked — the proxy really skips the repeats.</span>
+      </div>
+      <div class="race">
+        <div class="lane" data-lane="slow">
+          <div class="lane-head">
+            <span class="lane-name">Direct calls<span class="tag">no proxy</span></span>
+            <span class="lane-clock" data-clock="slow">0 ms</span>
+          </div>
+          <div class="slots" data-slots="slow"></div>
+        </div>
+        <div class="lane" data-lane="fast">
+          <div class="lane-head">
+            <span class="lane-name">Through the proxy<span class="tag">cached</span></span>
+            <span class="lane-clock" data-clock="fast">0 ms</span>
+          </div>
+          <div class="slots" data-slots="fast"></div>
+        </div>
+      </div>
+      <div class="race-verdict" id="race-verdict"></div>
+    </div>
+  </div>
+
   <p style="margin-top:18px">Four separate problems, one root cause: the client is welded to the
     real class, so there is nowhere to put a fix. The question that opens the whole session —
     <em>can we fix this without touching <code>RemoteImageService</code>?</em></p>
@@ -369,6 +489,36 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
     <figcaption>Dashed line with a hollow triangle = <em>implements</em>. Solid orange arrow = the proxy
       <em>holds a reference</em> to the real service and passes work along — but only when it decides to.</figcaption>
   </figure>
+
+
+  <div class="demo" style="margin-top:22px">
+    <div class="demo-head"><h3>Watch a call get intercepted</h3><span class="file">click a picture</span></div>
+    <div class="demo-body">
+      <p>This is the diagram above, running. Ask for a picture and follow the request.
+        The interesting moment is the <strong>second</strong> time you ask for the same one —
+        watch how far the request gets.</p>
+      <div class="flow-controls">
+        <button data-ask="cat.png" type="button">ask for cat.png</button>
+        <button data-ask="dog.png" type="button">ask for dog.png</button>
+        <button data-ask="parrot.png" type="button">ask for parrot.png</button>
+        <button class="ghost" id="flow-clear" type="button">Clear cache</button>
+        <span class="count" id="flow-count">requests <b>0</b> · network calls <b>0</b></span>
+      </div>
+      <div class="flow" id="flow">
+        <div class="flow-row">
+          <div class="node" data-node="client"><h4>Client</h4><span class="role">knows only the interface</span></div>
+          <span class="wire">→</span>
+          <div class="node" data-node="proxy"><h4>CachingImageProxy</h4><span class="role">decides: cache or delegate</span>
+            <div class="node-cache" id="flow-cache"></div>
+          </div>
+          <span class="wire">→</span>
+          <div class="node" data-node="real"><h4>RemoteImageService</h4><span class="role">400 ms every single time</span></div>
+        </div>
+        <div class="packet" id="flow-packet"></div>
+      </div>
+      <p class="flow-log" id="flow-log">Ask for a picture to start.</p>
+    </div>
+  </div>
 
   <p style="margin-top:22px">The whole trick is that both classes sit under one interface. Swap the
     object, keep the client:</p>
@@ -468,6 +618,36 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
         reactivity and MobX.</p>
     </div>
   </div>
+
+  <div class="demo" style="margin-top:22px">
+    <div class="demo-head"><h3>The language is spying for you</h3><span class="file">a real <code>new Proxy</code>, live</span></div>
+    <div class="demo-body">
+      <p>Below is a genuine JavaScript <code>Proxy</code> wrapping a plain object. Nobody wrote a
+        single wrapper method — yet <em>every</em> property you touch is intercepted, including
+        ones that do not exist. Click around:</p>
+      <div class="spy-grid">
+        <div>
+          <p class="sub" style="margin-bottom:8px">Properties that exist:</p>
+          <div class="spy-keys">
+            <button data-spy="name" type="button">user.name</button>
+            <button data-spy="role" type="button">user.role</button>
+            <button data-spy="city" type="button">user.city</button>
+          </div>
+          <p class="sub" style="margin:14px 0 8px">Properties that do <em>not</em> exist:</p>
+          <div class="spy-keys">
+            <button data-spy="password" type="button">user.password</button>
+            <button data-spy="nmae" type="button">user.nmae</button>
+          </div>
+          <div class="btnrow" style="margin:14px 0 0"><button class="ghost" id="spy-clear" type="button">Clear log</button></div>
+        </div>
+        <pre class="term" id="spy-out"></pre>
+      </div>
+      <p class="sub" style="margin-top:14px">One <code>get</code> handler covered all five — and would cover a
+        thousand more. That is how Vue 3 notices your data changed, and how test libraries fake
+        entire objects.</p>
+    </div>
+  </div>
+
 </section>
 
 <!-- ===================== 06 HANDS ON ===================== -->
@@ -1096,6 +1276,236 @@ node exercise/solution/solution2.ts</pre>
     });
   });
   markDone();
+
+
+  /* ---------- shared: async timing, so the page can animate ---------- */
+  var REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, REDUCED ? Math.min(ms, 60) : ms); }); }
+
+  var PICS = {
+    "cat.png":    { name: "cat",    hue: 18 },
+    "dog.png":    { name: "dog",    hue: 265 },
+    "parrot.png": { name: "parrot", hue: 150 }
+  };
+  var GALLERY = ["cat.png", "dog.png", "cat.png", "parrot.png", "dog.png", "cat.png"];
+  var LATENCY = 400;
+
+  /* ---------- 1. the race ---------- */
+  (function () {
+    var goBtn = document.getElementById("race-go");
+    if (!goBtn) return;
+    var verdict = document.getElementById("race-verdict");
+    var running = false;
+
+    function buildLane(which) {
+      var box = document.querySelector('[data-slots="' + which + '"]');
+      box.innerHTML = "";
+      return GALLERY.map(function (file) {
+        var pic = PICS[file];
+        var el = document.createElement("div");
+        el.className = "slot";
+        el.style.setProperty("--hue", pic.hue);
+        el.title = file;
+        el.appendChild(Object.assign(document.createElement("span"), { className: "pic", textContent: pic.name }));
+        el.appendChild(Object.assign(document.createElement("span"), { className: "badge" }));
+        box.appendChild(el);
+        return el;
+      });
+    }
+
+    function clock(which, ms) {
+      document.querySelector('[data-clock="' + which + '"]').textContent = Math.round(ms) + " ms";
+    }
+
+    /* one lane = one gallery load. useProxy decides whether repeats cost anything. */
+    async function runLane(which, useProxy) {
+      var slots = buildLane(which);
+      var lane = document.querySelector('[data-lane="' + which + '"]');
+      lane.removeAttribute("data-state");
+      var cache = new Set();
+      var netMs = 0, callStart = null, live = true;
+      (function tick() {                       // only network time counts, nothing else
+        if (!live) return;
+        clock(which, netMs + (callStart === null ? 0 : performance.now() - callStart));
+        requestAnimationFrame(tick);
+      })();
+
+      for (var i = 0; i < GALLERY.length; i++) {
+        var file = GALLERY[i], slot = slots[i];
+        if (useProxy && cache.has(file)) {
+          slot.dataset.s = "hit";
+          slot.querySelector(".badge").textContent = "cache";
+          await sleep(90);                     // free, but visible
+          continue;
+        }
+        slot.dataset.s = "loading";
+        callStart = performance.now();
+        await sleep(LATENCY);
+        netMs += LATENCY;                      // the cost the real service charges
+        callStart = null;
+        slot.dataset.s = "net";
+        slot.querySelector(".badge").textContent = "400 ms";
+        cache.add(file);
+      }
+      live = false;
+      clock(which, netMs);
+      return netMs;
+    }
+
+    buildLane("slow"); buildLane("fast");   // idle state, so the lanes are never empty
+
+    goBtn.addEventListener("click", function () {
+      if (running) return;
+      running = true;
+      goBtn.disabled = true;
+      goBtn.textContent = "Racing…";
+      verdict.className = "race-verdict";
+      Promise.all([runLane("slow", false), runLane("fast", true)]).then(function (r) {
+        var slow = r[0], fast = r[1];
+        document.querySelector('[data-lane="fast"]').dataset.state = "win";
+        verdict.className = "race-verdict show";
+        verdict.innerHTML = "<b>" + Math.round(slow) + " ms → " + Math.round(fast) + " ms.</b> " +
+          "The proxy made <b>" + (GALLERY.length - 3) + " of " + GALLERY.length + "</b> requests cost nothing — " +
+          "and the client code is identical in both lanes. It never found out.";
+        goBtn.disabled = false;
+        goBtn.textContent = "Race again";
+        running = false;
+      });
+    });
+  })();
+
+  /* ---------- 2. watch a call get intercepted ---------- */
+  (function () {
+    var flow = document.getElementById("flow");
+    if (!flow) return;
+    var packet = document.getElementById("flow-packet");
+    var log = document.getElementById("flow-log");
+    var cacheBox = document.getElementById("flow-cache");
+    var counter = document.getElementById("flow-count");
+    var nodes = {};
+    flow.querySelectorAll("[data-node]").forEach(function (n) { nodes[n.dataset.node] = n; });
+    var cache = [], requests = 0, networkCalls = 0, busy = false;
+
+    function centre(el) {
+      var a = el.getBoundingClientRect(), b = flow.getBoundingClientRect();
+      return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height / 2 };
+    }
+    function place(el) {
+      var c = centre(el);
+      packet.style.transform =
+        "translate(" + (c.x - packet.offsetWidth / 2) + "px," + (c.y - packet.offsetHeight / 2) + "px)";
+    }
+    function travel(to, ms) {
+      packet.style.transition = REDUCED ? "none" : "transform " + ms + "ms cubic-bezier(.4,0,.3,1)";
+      place(to);
+      return sleep(ms);
+    }
+    function renderCache() {
+      cacheBox.innerHTML = "";
+      cache.forEach(function (file) {
+        var d = document.createElement("div");
+        d.className = "cslot full";
+        d.textContent = PICS[file].name;
+        d.style.setProperty("--hue", PICS[file].hue);
+        d.title = file;
+        cacheBox.appendChild(d);
+      });
+      for (var i = cache.length; i < 3; i++) {
+        cacheBox.appendChild(Object.assign(document.createElement("div"), { className: "cslot" }));
+      }
+    }
+    function updateCount() {
+      counter.innerHTML = "requests <b>" + requests + "</b> · network calls <b>" + networkCalls + "</b>";
+    }
+
+    async function ask(file) {
+      if (busy) return;
+      busy = true;
+      requests++; updateCount();
+      var hit = cache.indexOf(file) > -1;
+
+      packet.textContent = PICS[file].name;
+      packet.className = "packet" + (hit ? " hit" : "");
+      packet.style.transition = "none";
+      place(nodes.client);
+      await sleep(20);
+      packet.classList.add("on");
+      log.innerHTML = 'Client asks for <b>' + file + '</b> …';
+
+      await travel(nodes.proxy, 420);
+      nodes.proxy.dataset.lit = "proxy";
+
+      if (hit) {
+        log.innerHTML = 'Client asks for <b>' + file + '</b> → <span class="hit">cache hit</span>. ' +
+          'The proxy answers by itself — the real service is never called.';
+        await sleep(360);
+        await travel(nodes.client, 420);
+        delete nodes.proxy.dataset.lit;
+      } else {
+        log.innerHTML = 'Client asks for <b>' + file + '</b> → <span class="miss">cache miss</span>, so the proxy delegates …';
+        await sleep(260);
+        delete nodes.proxy.dataset.lit;
+        await travel(nodes.real, 420);
+        nodes.real.dataset.lit = "net";
+        networkCalls++; updateCount();
+        log.innerHTML = 'Downloading <b>' + file + '</b> … 400 ms of real network.';
+        await sleep(LATENCY);
+        delete nodes.real.dataset.lit;
+        await travel(nodes.proxy, 420);
+        nodes.proxy.dataset.lit = "proxy";
+        if (cache.length >= 3) cache.shift();
+        cache.push(file);
+        renderCache();
+        log.innerHTML = 'Proxy stores <b>' + file + '</b> in its cache, then answers the client. ' +
+          'Ask again and it will not travel this far.';
+        await sleep(300);
+        delete nodes.proxy.dataset.lit;
+        await travel(nodes.client, 420);
+      }
+      packet.classList.remove("on");
+      busy = false;
+    }
+
+    flow.parentElement.querySelectorAll("[data-ask]").forEach(function (b) {
+      b.addEventListener("click", function () { ask(b.dataset.ask); });
+    });
+    document.getElementById("flow-clear").addEventListener("click", function () {
+      if (busy) return;
+      cache = []; renderCache();
+      log.textContent = "Cache cleared. The next request has to travel all the way again.";
+    });
+    renderCache(); updateCount();
+    window.addEventListener("resize", function () { if (!busy) packet.classList.remove("on"); });
+  })();
+
+  /* ---------- 3. the native Proxy, actually spying ---------- */
+  (function () {
+    var out = document.getElementById("spy-out");
+    if (!out) return;
+    var n = 0;
+    var target = { name: "Cebrail", role: "presenter", city: "Hamburg" };
+    /* a real trap: nobody wrote per-property wrappers, yet nothing gets past this */
+    var user = new Proxy(target, {
+      get: function (obj, prop) {
+        n++;
+        var exists = prop in obj;
+        out.innerHTML +=
+          '<span class="d">#' + String(n).padStart(2, "0") + '</span> ' +
+          '<span class="p">get</span> user.' + String(prop) + '  ' +
+          (exists ? '<span class="g">→ "' + obj[prop] + '"</span>'
+                  : '<span class="b">→ undefined  (does not exist — trap still fired)</span>') + "\n";
+        out.scrollTop = out.scrollHeight;
+        return obj[prop];
+      }
+    });
+
+    document.querySelectorAll("[data-spy]").forEach(function (b) {
+      b.addEventListener("click", function () { user[b.dataset.spy]; });
+    });
+    document.getElementById("spy-clear").addEventListener("click", function () {
+      out.innerHTML = ""; n = 0;
+    });
+  })();
 
   /* ---------- rail highlighting ---------- */
   var links = {};
